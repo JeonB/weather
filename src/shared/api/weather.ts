@@ -138,7 +138,8 @@ export async function getForecastByCity(
 }
 
 function formatHourlyForecast(
-  forecastResponse: ForecastResponse
+  forecastResponse: ForecastResponse,
+  currentWeather: CurrentWeatherResponse
 ): HourlyForecast[] {
   const now = new Date();
   const today = new Date(now);
@@ -146,13 +147,13 @@ function formatHourlyForecast(
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  // 오늘 0시부터 24시까지의 데이터만 필터링
+  // 오늘 0시부터 24시까지의 데이터 필터링
   const todayItems = forecastResponse.list.filter((item) => {
     const itemDate = new Date(item.dt * 1000);
     return itemDate >= today && itemDate < tomorrow;
   });
 
-  // 0시, 3시, 6시, 9시, 12시, 15시, 18시, 21시만 추출 (3시간 간격)
+  // 0시, 3시, 6시, 9시, 12시, 15시, 18시, 21시 (3시간 간격)
   const hourlySlots = [0, 3, 6, 9, 12, 15, 18, 21];
   const result: HourlyForecast[] = [];
 
@@ -160,18 +161,34 @@ function formatHourlyForecast(
     const targetTime = new Date(today);
     targetTime.setHours(hour, 0, 0, 0);
 
-    // 해당 시간에 가장 가까운 항목 찾기 (30분 이내)
-    const closest = todayItems.reduce((prev, curr) => {
-      const currTime = new Date(curr.dt * 1000);
-      const prevDiff = Math.abs(prev.dt * 1000 - targetTime.getTime());
-      const currDiff = Math.abs(currTime.getTime() - targetTime.getTime());
-      return currDiff < prevDiff && currDiff <= 30 * 60 * 1000 ? curr : prev;
-    }, todayItems[0]);
+    // 현재 시간보다 이전인지 확인
+    const isPast = targetTime < now;
 
-    if (closest) {
-      const itemTime = new Date(closest.dt * 1000);
-      const diff = Math.abs(itemTime.getTime() - targetTime.getTime());
-      if (diff <= 30 * 60 * 1000) {
+    if (isPast) {
+      // 과거 시간은 현재 날씨로 채움
+      result.push({
+        time: targetTime.toLocaleTimeString("ko-KR", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        }),
+        temp: Math.round(currentWeather.main.temp),
+        icon: currentWeather.weather[0]?.icon || "01d",
+        description: currentWeather.weather[0]?.description || "",
+      });
+    } else {
+      // 미래 시간은 예보 데이터 사용
+      if (todayItems.length === 0) continue;
+
+      // 해당 시간에 가장 가까운 항목 찾기
+      const closest = todayItems.reduce((prev, curr) => {
+        const currTime = new Date(curr.dt * 1000);
+        const prevDiff = Math.abs(prev.dt * 1000 - targetTime.getTime());
+        const currDiff = Math.abs(currTime.getTime() - targetTime.getTime());
+        return currDiff < prevDiff ? curr : prev;
+      }, todayItems[0]);
+
+      if (closest) {
         result.push({
           time: targetTime.toLocaleTimeString("ko-KR", {
             hour: "2-digit",
@@ -245,7 +262,7 @@ export async function getWeatherData(
       icon: currentWeather.weather[0]?.icon || "01d",
       windSpeed: currentWeather.wind.speed,
     },
-    hourlyForecast: formatHourlyForecast(forecast),
+    hourlyForecast: formatHourlyForecast(forecast, currentWeather),
   };
 
   // 최종 데이터 검증

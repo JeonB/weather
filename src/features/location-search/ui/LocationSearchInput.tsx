@@ -21,6 +21,7 @@ export default function LocationSearchInput({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   const { query, setQuery, results, isOpen, setIsOpen, selectLocation } =
     useLocationSearch(onSelect);
@@ -41,11 +42,22 @@ export default function LocationSearchInput({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [setIsOpen]);
 
-  // 검색 결과가 변경되면 선택 인덱스 리셋
+  // 검색 결과가 변경되면 선택 인덱스 리셋 및 refs 배열 초기화
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedIndex(-1);
+    itemRefs.current = [];
   }, [results]);
+
+  // 선택된 항목이 변경되면 스크롤
+  useEffect(() => {
+    if (selectedIndex >= 0 && itemRefs.current[selectedIndex]) {
+      itemRefs.current[selectedIndex]?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }
+  }, [selectedIndex]);
 
   const handleInputChange = (value: string) => {
     setQuery(value);
@@ -109,6 +121,9 @@ export default function LocationSearchInput({
               {results.map((location, index) => (
                 <li key={location.fullName}>
                   <button
+                    ref={(el) => {
+                      itemRefs.current[index] = el;
+                    }}
                     type="button"
                     onClick={() => handleSelect(location)}
                     onMouseEnter={() => handleMouseEnter(index)}

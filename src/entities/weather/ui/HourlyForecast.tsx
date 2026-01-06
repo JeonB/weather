@@ -1,7 +1,6 @@
 "use client";
 
-import Image from "next/image";
-import { getWeatherIconUrl } from "@shared/api/weather";
+import { WeatherScene } from "@shared/ui";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import type { HourlyForecast as HourlyForecastType } from "@shared/api/weather.types";
 import { cn } from "@shared/lib/cn";
@@ -38,12 +37,7 @@ export default function HourlyForecast({
               <span className="text-xs text-muted-foreground">
                 {forecast.time}
               </span>
-              <Image
-                src={getWeatherIconUrl(forecast.icon)}
-                alt={forecast.description}
-                width={40}
-                height={40}
-              />
+              <WeatherScene icon={forecast.icon} size="sm" />
               <span className="text-sm font-medium">{forecast.temp}°</span>
             </div>
           ))}
