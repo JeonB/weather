@@ -1,0 +1,99 @@
+---
+alwaysApply: false
+---
+
+# Weather App 프로젝트 전용 규칙
+
+## 1. 아키텍처: Feature Sliced Design (FSD)
+
+### 디렉토리 구조
+
+프로젝트는 FSD 아키텍처를 따릅니다. Next.js App Router와 함께 사용하므로 다음과 같은 구조를 따릅니다:
+
+```bash
+app/                  ****  # Next.js App Router (라우팅 및 페이지)
+src/
+├── app/               # 애플리케이션 초기화 레이어 (프로바이더, 라우터 설정 등)
+├── processes/         # 비즈니스 프로세스 (복잡한 사용자 시나리오)
+├── pages/             # 페이지 컴포넌트 (Next.js app/와 연동)
+├── widgets/           # 독립적인 UI 블록 (복합 컴포넌트)
+├── features/          # 사용자 기능 (비즈니스 기능 단위)
+│   ├── weather-search/    # 날씨 검색 기능
+│   └── location-search/   # 장소 검색 기능
+├── entities/          # 비즈니스 엔티티 (도메인 모델)
+│   └── weather/           # 날씨 엔티티
+└── shared/            # 재사용 가능한 코드
+    ├── ui/                # 공통 UI 컴포넌트
+    ├── lib/               # 유틸리티 함수
+    ├── api/               # API 클라이언트
+    └── config/            # 설정 파일
+```
+
+### 레이어 규칙
+
+1. **shared**: 다른 모든 레이어에서 import 가능
+2. **entities**: shared에서만 import 가능
+3. **features**: shared, entities에서만 import 가능
+4. **widgets**: shared, entities, features에서만 import 가능
+5. **pages**: 모든 레이어에서 import 가능
+6. **processes**: 모든 레이어에서 import 가능
+7. **app**: 모든 레이어에서 import 가능
+
+### 슬라이스 규칙
+
+- 각 feature/entity/widget는 독립적인 슬라이스로 구성
+- 슬라이스 내부는 `ui/`, `model/`, `api/`, `lib/` 등으로 세분화 가능
+- 슬라이스 간 직접 import 금지 (레이어 규칙 준수)
+
+## 2. 날씨 API
+
+### API 선택
+
+- **OpenWeatherMap API** 사용 (더 간단하고 문서화가 잘 되어 있음)
+- API 키는 환경 변수로 관리: `NEXT_PUBLIC_OPENWEATHER_API_KEY`
+- API 클라이언트는 `src/shared/api/weather.ts`에 구현
+
+### API 사용 규칙
+
+- 모든 API 호출은 `src/shared/api/` 디렉토리에 중앙화
+- 타입 안전성을 위해 API 응답 타입을 명시적으로 정의
+- 에러 처리는 적절한 에러 메시지와 함께 구현
+- API 호출은 서버 컴포넌트 또는 Server Actions에서 우선 처리
+
+## 3. 장소 검색 기능
+
+### korea_districts.json 활용
+
+- `korea_districts.json` 파일을 `src/shared/lib/korea-districts.ts`에서 로드
+- 장소 검색 기능은 `src/features/location-search/`에 구현
+- 검색 알고리즘:
+  - 사용자 입력에 따라 하이픈으로 구분된 지역명에서 매칭
+  - 부분 일치 검색 지원 (예: "서울" 입력 시 "서울특별시" 관련 모든 결과)
+  - 검색 결과는 시/도 > 구/군 > 동 순으로 정렬
+
+### 검색 컴포넌트
+
+- 자동완성 기능이 있는 검색 입력 컴포넌트 구현
+- 검색 결과는 드롭다운 형태로 표시
+- 선택된 지역은 날씨 조회에 사용
+
+## 4. 반응형 디자인
+
+### 브레이크포인트
+
+Tailwind CSS의 기본 브레이크포인트 사용:
+
+- `sm:` - 640px 이상 (모바일 가로)
+- `md:` - 768px 이상 (태블릿)
+- `lg:` - 1024px 이상 (데스크탑)
+- `xl:` - 1280px 이상 (큰 데스크탑)
+
+### 반응형 구현 규칙
+
+- **모바일 우선 설계**: 기본 스타일은 모바일에 맞추고, 큰 화면에 대한 스타일을 추가
+- **레이아웃**:
+  - 모바일: 세로 스택 레이아웃
+  - 데스크탑: 가로 레이아웃 또는 그리드
+- **네비게이션**: 모바일에서는 햄버거 메뉴, 데스크탑에서는 상단 네비게이션
+- **컴포넌트 크기**: 터치 친화적인 크기 (최소 44x44px)
+- **이미지**: Next.js Image 컴포넌트 사용, 반응형 크기 설정

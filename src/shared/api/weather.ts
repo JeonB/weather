@@ -1,0 +1,206 @@
+import type {
+  CurrentWeatherResponse,
+  ForecastResponse,
+  WeatherData,
+  HourlyForecast,
+  Coordinates,
+} from "./weather.types";
+
+const API_BASE_URL = "https://api.openweathermap.org/data/2.5";
+const API_KEY = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY;
+
+// 전역 API 호출 카운터 및 throttle 관리
+let apiCallCount = 0;
+let apiCallWindowStart = Date.now();
+const API_CALL_LIMIT = 50; // 1분에 50회로 제한 (안전 마진)
+const API_WINDOW_MS = 60000; // 1분
+
+async function fetchWeatherAPI<T>(
+  endpoint: string,
+  params: Record<string, string>
+): Promise<T> {
+  // Rate limiting 체크
+  const now = Date.now();
+  if (now - apiCallWindowStart > API_WINDOW_MS) {
+    // 새로운 윈도우 시작
+    apiCallCount = 0;
+    apiCallWindowStart = now;
+  }
+
+  if (apiCallCount >= API_CALL_LIMIT) {
+    throw new Error("API 호출 한도를 초과했습니다. 잠시 후 다시 시도해주세요.");
+  }
+
+  apiCallCount++;
+
+  if (!API_KEY) {
+    throw new Error("OpenWeatherMap API 키가 설정되지 않았습니다.");
+  }
+
+  const searchParams = new URLSearchParams({
+    ...params,
+    appid: API_KEY,
+    units: "metric",
+    lang: "kr",
+  });
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}?${searchParams}`);
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error("해당 장소의 정보가 제공되지 않습니다.");
+    }
+    if (response.status === 429) {
+      // 429 에러 시 카운터를 최대로 설정하여 추가 호출 방지
+      apiCallCount = API_CALL_LIMIT;
+    }
+    throw new Error(
+      `날씨 정보를 가져오는데 실패했습니다. (${response.status})`
+    );
+  }
+
+  return response.json();
+}
+
+export async function getCurrentWeatherByCoords(
+  lat: number,
+  lon: number
+): Promise<CurrentWeatherResponse> {
+  return fetchWeatherAPI<CurrentWeatherResponse>("/weather", {
+    lat: lat.toString(),
+    lon: lon.toString(),
+  });
+}
+
+export async function getCurrentWeatherByCity(
+  cityName: string
+): Promise<CurrentWeatherResponse> {
+  return fetchWeatherAPI<CurrentWeatherResponse>("/weather", {
+    q: cityName,
+  });
+}
+
+export async function getForecastByCoords(
+  lat: number,
+  lon: number
+): Promise<ForecastResponse> {
+  return fetchWeatherAPI<ForecastResponse>("/forecast", {
+    lat: lat.toString(),
+    lon: lon.toString(),
+  });
+}
+
+export async function getForecastByCity(
+  cityName: string
+): Promise<ForecastResponse> {
+  return fetchWeatherAPI<ForecastResponse>("/forecast", {
+    q: cityName,
+  });
+}
+
+function formatHourlyForecast(
+  forecastResponse: ForecastResponse
+): HourlyForecast[] {
+  const now = new Date();
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  // 오늘 0시부터 24시까지의 데이터만 필터링
+  const todayItems = forecastResponse.list.filter((item) => {
+    const itemDate = new Date(item.dt * 1000);
+    return itemDate >= today && itemDate < tomorrow;
+  });
+
+  // 0시, 3시, 6시, 9시, 12시, 15시, 18시, 21시만 추출 (3시간 간격)
+  const hourlySlots = [0, 3, 6, 9, 12, 15, 18, 21];
+  const result: HourlyForecast[] = [];
+
+  for (const hour of hourlySlots) {
+    const targetTime = new Date(today);
+    targetTime.setHours(hour, 0, 0, 0);
+
+    // 해당 시간에 가장 가까운 항목 찾기 (30분 이내)
+    const closest = todayItems.reduce((prev, curr) => {
+      const currTime = new Date(curr.dt * 1000);
+      const prevDiff = Math.abs(prev.dt * 1000 - targetTime.getTime());
+      const currDiff = Math.abs(currTime.getTime() - targetTime.getTime());
+      return currDiff < prevDiff && currDiff <= 30 * 60 * 1000 ? curr : prev;
+    }, todayItems[0]);
+
+    if (closest) {
+      const itemTime = new Date(closest.dt * 1000);
+      const diff = Math.abs(itemTime.getTime() - targetTime.getTime());
+      if (diff <= 30 * 60 * 1000) {
+        result.push({
+          time: targetTime.toLocaleTimeString("ko-KR", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+          }),
+          temp: Math.round(closest.main.temp),
+          icon: closest.weather[0]?.icon || "01d",
+          description: closest.weather[0]?.description || "",
+        });
+      }
+    }
+  }
+
+  return result;
+}
+
+export async function getWeatherData(
+  coordinates: Coordinates
+): Promise<WeatherData> {
+  const [currentWeather, forecast] = await Promise.all([
+    getCurrentWeatherByCoords(coordinates.lat, coordinates.lon),
+    getForecastByCoords(coordinates.lat, coordinates.lon),
+  ]);
+
+  return {
+    location: currentWeather.name,
+    coordinates: {
+      lat: currentWeather.coord.lat,
+      lon: currentWeather.coord.lon,
+    },
+    current: {
+      temp: Math.round(currentWeather.main.temp),
+      feelsLike: Math.round(currentWeather.main.feels_like),
+      tempMin: Math.round(currentWeather.main.temp_min),
+      tempMax: Math.round(currentWeather.main.temp_max),
+      humidity: currentWeather.main.humidity,
+      description: currentWeather.weather[0]?.description || "",
+      icon: currentWeather.weather[0]?.icon || "01d",
+      windSpeed: currentWeather.wind.speed,
+    },
+    hourlyForecast: formatHourlyForecast(forecast),
+  };
+}
+
+export async function getWeatherDataByLocationName(
+  locationName: string
+): Promise<WeatherData> {
+  // 한국 지역명을 영문 또는 좌표로 변환하여 검색
+  // OpenWeatherMap은 한글 도시명 검색이 제한적이므로 Geocoding API 사용
+  const geocodingUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(
+    locationName
+  )},KR&limit=1&appid=${API_KEY}`;
+
+  const geoResponse = await fetch(geocodingUrl);
+  if (!geoResponse.ok) {
+    throw new Error("해당 장소의 정보가 제공되지 않습니다.");
+  }
+
+  const geoData = await geoResponse.json();
+  if (!geoData || geoData.length === 0) {
+    throw new Error("해당 장소의 정보가 제공되지 않습니다.");
+  }
+
+  const { lat, lon } = geoData[0];
+  return getWeatherData({ lat, lon });
+}
+
+export function getWeatherIconUrl(iconCode: string): string {
+  return `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+}
