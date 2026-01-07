@@ -13,16 +13,26 @@ export default function FavoritesList({ className }: FavoritesListProps) {
   const { favorites, removeFromFavorites, updateAlias } = useFavorites();
 
   return (
-    <div className={cn("", className)}>
+    <div
+      className={cn(
+        "bg-card border rounded-xl shadow-sm p-4 sm:p-6",
+        className
+      )}
+    >
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">즐겨찾기</h2>
-        <span className="text-sm text-muted-foreground">
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold">즐겨찾기</h2>
+          <p className="text-xs text-muted-foreground">
+            자주 보는 지역을 빠르게 확인하세요
+          </p>
+        </div>
+        <span className="text-sm text-muted-foreground font-medium">
           {favorites.length}/{MAX_FAVORITES}
         </span>
       </div>
 
       {favorites.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg bg-muted/30">
+        <div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg bg-muted/40">
           <div className="rounded-full bg-muted p-4 mb-4">
             <svg
               className="h-8 w-8 text-muted-foreground"
@@ -52,7 +62,7 @@ export default function FavoritesList({ className }: FavoritesListProps) {
               key={favorite.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
+              transition={{ duration: 0.3, delay: index * 0.05 }}
             >
               <FavoriteCard
                 favorite={favorite}

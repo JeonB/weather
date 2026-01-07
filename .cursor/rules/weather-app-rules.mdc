@@ -2,6 +2,8 @@
 alwaysApply: false
 ---
 
+# Weather App Rules
+
 ## 1. 코드 작성 규칙
 
 ### 절대 하지 말 것
@@ -48,14 +50,14 @@ alwaysApply: false
 
 ### 서버/클라이언트 컴포넌트 구분 기준
 
-**서버 컴포넌트 사용 (기본)**
+#### 서버 컴포넌트 사용 (기본)
 
 - 데이터 페칭 (직접 async 함수 호출)
 - 백엔드 리소스 접근 (데이터베이스, 파일 시스템)
 - 민감한 정보 사용 (API 키, 토큰)
 - 큰 의존성 사용 (서버에만 필요한 라이브러리)
 
-**클라이언트 컴포넌트로 전환 필요**
+#### 클라이언트 컴포넌트로 전환 필요
 
 - 이벤트 핸들러 사용 (`onClick`, `onChange` 등)
 - 상태 훅 사용 (`useState`, `useReducer` 등)
@@ -64,7 +66,7 @@ alwaysApply: false
 - 커스텀 훅 사용 (내부적으로 클라이언트 훅을 사용하는 경우)
 - Context API 사용 (Provider/Consumer)
 
-**하이브리드 패턴**
+#### 하이브리드 패턴
 
 - 서버 컴포넌트에서 클라이언트 컴포넌트를 자식으로 렌더링
 - 클라이언트 컴포넌트는 가능한 한 얇게 유지 (최소 상호작용만)
@@ -122,7 +124,7 @@ import { type ReactNode, type ComponentProps } from "react";
 
 ## 3. 파일 구조 규칙
 
-### 디렉토리 구조
+### FSD 디렉토리 구조
 
 ```text
 app/                    # Next.js App Router 페이지
@@ -218,7 +220,7 @@ lib/                  # 유틸리티 및 설정
 - **인라인 스타일 금지**: Tailwind 클래스로 모든 스타일링 처리
 - **CSS 모듈/스타일드 컴포넌트 금지**: Tailwind CSS 일원화
 
-# Weather App 프로젝트 전용 규칙
+## Weather App 프로젝트 전용 규칙
 
 ## 1. 아키텍처: Feature Sliced Design (FSD)
 

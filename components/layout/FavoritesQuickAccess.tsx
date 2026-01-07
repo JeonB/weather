@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useSyncExternalStore, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,16 @@ import { cn } from "@shared/lib/cn";
 
 export default function FavoritesQuickAccess() {
   const { favorites } = useFavorites();
+  const isHydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
   const [isOpen, setIsOpen] = useState(false);
+
+  if (!isHydrated) {
+    return null;
+  }
 
   if (favorites.length === 0) {
     return null;

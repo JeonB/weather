@@ -19,13 +19,16 @@ interface EditFavoriteDialogProps {
   onSave: (alias: string | null) => void;
 }
 
-export function EditFavoriteDialog({
+export function EditFavoriteDialog(props: EditFavoriteDialogProps) {
+  return <EditFavoriteDialogInner key={props.favorite.id} {...props} />;
+}
+
+function EditFavoriteDialogInner({
   open,
   onOpenChange,
   favorite,
   onSave,
 }: EditFavoriteDialogProps) {
-  // key prop을 사용하여 favorite가 변경될 때 상태 초기화
   const [alias, setAlias] = useState(favorite.alias || "");
 
   const handleSave = () => {

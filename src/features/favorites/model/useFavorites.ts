@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useSyncExternalStore } from "react";
 import {
   getFavorites,
   addFavorite,
@@ -28,23 +28,94 @@ interface UseFavoritesReturn {
   refresh: () => void;
 }
 
-export function useFavorites(): UseFavoritesReturn {
-  // 서버/클라이언트 하이드레이션 일치를 위해 초기값은 빈 배열
-  const [favorites, setFavorites] = useState<FavoriteLocation[]>([]);
-  const [canAddMore, setCanAddMore] = useState(true);
+interface FavoritesSnapshot {
+  favorites: FavoriteLocation[];
+  canAddMore: boolean;
+}
 
-  // 클라이언트에서만 localStorage에서 데이터 로드
-  // localStorage는 브라우저 API이므로 클라이언트에서만 접근 가능
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setFavorites(getFavorites());
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setCanAddMore(canAddMoreFavorites());
-  }, []);
+const listeners = new Set<() => void>();
+const defaultSnapshot: FavoritesSnapshot = { favorites: [], canAddMore: true };
+let cachedSnapshot: FavoritesSnapshot = defaultSnapshot;
+
+function safeGetFavorites(): FavoriteLocation[] {
+  if (typeof window === "undefined") return [];
+  return getFavorites();
+}
+
+function computeSnapshot(): FavoritesSnapshot {
+  return {
+    favorites: safeGetFavorites(),
+    canAddMore: typeof window === "undefined" ? true : canAddMoreFavorites(),
+  };
+}
+
+function areSnapshotsEqual(
+  a: FavoritesSnapshot,
+  b: FavoritesSnapshot
+): boolean {
+  if (a.canAddMore !== b.canAddMore) return false;
+  if (a.favorites.length !== b.favorites.length) return false;
+  for (let i = 0; i < a.favorites.length; i += 1) {
+    const prev = a.favorites[i];
+    const next = b.favorites[i];
+    if (
+      prev.id !== next.id ||
+      prev.fullName !== next.fullName ||
+      prev.displayName !== next.displayName ||
+      prev.alias !== next.alias ||
+      prev.coordinates?.lat !== next.coordinates?.lat ||
+      prev.coordinates?.lon !== next.coordinates?.lon
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function updateCachedSnapshot(): FavoritesSnapshot {
+  const nextSnapshot = computeSnapshot();
+  if (!areSnapshotsEqual(cachedSnapshot, nextSnapshot)) {
+    cachedSnapshot = nextSnapshot;
+  }
+  return cachedSnapshot;
+}
+
+function getSnapshot(): FavoritesSnapshot {
+  if (typeof window === "undefined") {
+    return cachedSnapshot;
+  }
+  return updateCachedSnapshot();
+}
+
+function getServerSnapshot(): FavoritesSnapshot {
+  return defaultSnapshot;
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function emit() {
+  updateCachedSnapshot();
+  listeners.forEach((listener) => listener());
+}
+
+export function useFavorites(): UseFavoritesReturn {
+  const isHydrated = useSyncExternalStore(
+    () => () => {},
+    () => typeof window !== "undefined",
+    () => false
+  );
+
+  const snapshot = useSyncExternalStore(
+    subscribe,
+    () => (isHydrated ? getSnapshot() : defaultSnapshot),
+    getServerSnapshot
+  );
 
   function refresh() {
-    setFavorites(getFavorites());
-    setCanAddMore(canAddMoreFavorites());
+    emit();
   }
 
   function addToFavorites(
@@ -54,7 +125,7 @@ export function useFavorites(): UseFavoritesReturn {
   ): boolean {
     const result = addFavorite(fullName, displayName, coordinates);
     if (result) {
-      refresh();
+      emit();
       return true;
     }
     return false;
@@ -63,7 +134,7 @@ export function useFavorites(): UseFavoritesReturn {
   function removeFromFavorites(id: string): boolean {
     const result = removeFavorite(id);
     if (result) {
-      refresh();
+      emit();
       return true;
     }
     return false;
@@ -72,7 +143,7 @@ export function useFavorites(): UseFavoritesReturn {
   function updateAlias(id: string, alias: string | null): boolean {
     const result = updateFavoriteAlias(id, alias);
     if (result) {
-      refresh();
+      emit();
       return true;
     }
     return false;
@@ -81,7 +152,7 @@ export function useFavorites(): UseFavoritesReturn {
   function updateCoordinates(id: string, coordinates: Coordinates): boolean {
     const result = updateFavoriteCoordinates(id, coordinates);
     if (result) {
-      refresh();
+      emit();
       return true;
     }
     return false;
@@ -92,13 +163,13 @@ export function useFavorites(): UseFavoritesReturn {
   }
 
   return {
-    favorites,
+    favorites: snapshot.favorites,
     addToFavorites,
     removeFromFavorites,
     updateAlias,
     updateCoordinates,
     isFavoriteLocation,
-    canAddMore,
+    canAddMore: snapshot.canAddMore,
     refresh,
   };
 }

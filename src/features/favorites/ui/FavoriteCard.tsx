@@ -42,6 +42,8 @@ export default function FavoriteCard({
     : "좌표 정보가 없습니다";
 
   const displayName = favorite.alias || favorite.displayName;
+  const secondaryName =
+    favorite.alias && favorite.alias.length > 0 ? favorite.displayName : null;
   const locationId = encodeURIComponent(favorite.fullName);
 
   if (isLoading && favorite.coordinates) {
@@ -75,20 +77,34 @@ export default function FavoriteCard({
         >
           <Link
             href={`/location/${locationId}`}
-            className="block cursor-pointer"
+            className="block cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg"
           >
             <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-medium text-sm truncate pr-2">
-                  {displayName}
-                </h3>
+              <div className="flex items-start justify-center mb-2">
+                <div className="space-y-1 pr-2">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-sm truncate">
+                      {displayName}
+                    </h3>
+                    {favorite.alias && favorite.alias.length > 0 && (
+                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                        별칭
+                      </span>
+                    )}
+                  </div>
+                  {secondaryName && (
+                    <p className="text-xs text-muted-foreground truncate">
+                      {secondaryName}
+                    </p>
+                  )}
+                </div>
               </div>
 
               {error ? (
                 <p className="text-xs text-destructive">{error}</p>
               ) : weather ? (
                 <motion.div
-                  className="flex items-center gap-3"
+                  className="flex items-center justify-center gap-3"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.1 }}
@@ -101,11 +117,14 @@ export default function FavoriteCard({
                     className="shrink-0"
                   />
                   <div className="flex flex-col">
-                    <span className="text-2xl font-bold">
+                    <span className="text-2xl font-bold leading-tight">
                       {weather.current.temp}°
                     </span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground leading-tight">
                       {weather.current.tempMin}° / {weather.current.tempMax}°
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">
+                      체감 {weather.current.feelsLike}°
                     </span>
                   </div>
                 </motion.div>

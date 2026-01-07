@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Coordinates } from "@shared/api/weather.types";
 
 interface GeolocationState {
@@ -15,6 +15,8 @@ interface UseGeolocationReturn extends GeolocationState {
 }
 
 export function useGeolocation(autoRequest = true): UseGeolocationReturn {
+  const hasAutoRequestedRef = useRef(false);
+  const isRequestingRef = useRef(false);
   const [state, setState] = useState<GeolocationState>({
     coordinates: null,
     isLoading: false,
@@ -25,10 +27,21 @@ export function useGeolocation(autoRequest = true): UseGeolocationReturn {
   useEffect(() => {
     if (typeof navigator !== "undefined" && "geolocation" in navigator) {
       setState((prev) => ({ ...prev, isSupported: true }));
+      return;
     }
+
+    setState((prev) => ({
+      ...prev,
+      isSupported: false,
+      error: "이 브라우저는 위치 정보를 지원하지 않습니다.",
+    }));
   }, []);
 
   function requestLocation() {
+    if (state.isLoading || isRequestingRef.current) {
+      return;
+    }
+
     if (!state.isSupported) {
       setState((prev) => ({
         ...prev,
@@ -37,6 +50,7 @@ export function useGeolocation(autoRequest = true): UseGeolocationReturn {
       return;
     }
 
+    isRequestingRef.current = true;
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     navigator.geolocation.getCurrentPosition(
@@ -54,6 +68,7 @@ export function useGeolocation(autoRequest = true): UseGeolocationReturn {
           error: null,
           isSupported: true,
         });
+        isRequestingRef.current = false;
       },
       (error) => {
         let errorMessage = "위치 정보를 가져올 수 없습니다.";
@@ -76,6 +91,7 @@ export function useGeolocation(autoRequest = true): UseGeolocationReturn {
           isLoading: false,
           error: errorMessage,
         }));
+        isRequestingRef.current = false;
       },
       {
         enableHighAccuracy: false,
@@ -91,8 +107,10 @@ export function useGeolocation(autoRequest = true): UseGeolocationReturn {
       autoRequest &&
       state.isSupported &&
       !state.coordinates &&
-      !state.isLoading
+      !state.isLoading &&
+      !hasAutoRequestedRef.current
     ) {
+      hasAutoRequestedRef.current = true;
       requestLocation();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

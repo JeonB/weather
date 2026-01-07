@@ -1,23 +1,33 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { cn } from "@shared/lib/cn";
 
 export default function ThemeToggle() {
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
   const { theme, setTheme } = useTheme();
 
-  // theme이 아직 로드되지 않았을 때 플레이스홀더 표시
-  if (theme === undefined) {
+  // SSR과 클라이언트 최초 렌더를 동일하게 맞추기 위해 마운트 전에는
+  // 고정된 플레이스홀더 UI를 보여준다.
+  if (!mounted || theme === undefined) {
     return (
-      <Button
-        variant="outline"
-        size="icon"
-        className="h-9 w-9"
-        aria-label="테마 전환"
-      >
-        <div className="h-4 w-4" />
-      </Button>
+      <div className="flex items-center gap-1 border rounded-md p-1">
+        <Button variant="outline" size="sm" className="h-7 px-2" disabled>
+          <div className="h-4 w-4" />
+        </Button>
+        <Button variant="outline" size="sm" className="h-7 px-2" disabled>
+          <div className="h-4 w-4" />
+        </Button>
+        <Button variant="outline" size="sm" className="h-7 px-2" disabled>
+          <div className="h-4 w-4" />
+        </Button>
+      </div>
     );
   }
 
