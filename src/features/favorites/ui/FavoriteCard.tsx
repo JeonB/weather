@@ -34,6 +34,7 @@ export default function FavoriteCard({
     error: queryError,
   } = useWeatherData(favorite.coordinates, {
     enabled: favorite.coordinates !== null,
+    locationName: favorite.displayName,
   });
 
   const error = favorite.coordinates
@@ -72,7 +73,10 @@ export default function FavoriteCard({
         <Card
           className={cn("overflow-hidden group relative h-full", className)}
         >
-          <Link href={`/location/${locationId}`} className="block">
+          <Link
+            href={`/location/${locationId}`}
+            className="block cursor-pointer"
+          >
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-medium text-sm truncate pr-2">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, type KeyboardEvent } from "react";
+import { useRef, useEffect, useState, type KeyboardEvent } from "react";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@shared/lib/cn";
@@ -20,6 +20,7 @@ export default function LocationSearchInput({
 }: LocationSearchInputProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
 
   const { query, setQuery, results, isOpen, setIsOpen, selectLocation } =
     useLocationSearch(onSelect);
@@ -32,6 +33,7 @@ export default function LocationSearchInput({
         !containerRef.current.contains(event.target as Node)
       ) {
         setIsOpen(false);
+        setSelectedIndex(-1);
       }
     }
 
@@ -39,21 +41,50 @@ export default function LocationSearchInput({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [setIsOpen]);
 
+  // 검색 결과가 변경되면 선택 인덱스 리셋
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelectedIndex(-1);
+  }, [results]);
+
   const handleInputChange = (value: string) => {
     setQuery(value);
     setIsOpen(value.trim().length > 0);
+    setSelectedIndex(-1);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Escape") {
       setIsOpen(false);
+      setSelectedIndex(-1);
       inputRef.current?.blur();
+      return;
+    }
+
+    if (!isOpen || results.length === 0) {
+      return;
+    }
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev < results.length - 1 ? prev + 1 : prev));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
+    } else if (e.key === "Enter" && selectedIndex >= 0) {
+      e.preventDefault();
+      handleSelect(results[selectedIndex]);
     }
   };
 
   const handleSelect = (location: ParsedLocation) => {
     selectLocation(location);
     setQuery("");
+    setSelectedIndex(-1);
+  };
+
+  const handleMouseEnter = (index: number) => {
+    setSelectedIndex(index);
   };
 
   return (
@@ -75,12 +106,17 @@ export default function LocationSearchInput({
         <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-md border bg-popover shadow-lg overflow-hidden">
           <ScrollArea className="max-h-[300px] w-full">
             <ul className="py-1">
-              {results.map((location) => (
+              {results.map((location, index) => (
                 <li key={location.fullName}>
                   <button
                     type="button"
                     onClick={() => handleSelect(location)}
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none transition-colors"
+                    onMouseEnter={() => handleMouseEnter(index)}
+                    className={cn(
+                      "w-full px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none transition-colors cursor-pointer",
+                      selectedIndex === index &&
+                        "bg-accent text-accent-foreground"
+                    )}
                   >
                     <span className="font-medium">{location.displayName}</span>
                     {location.district && (

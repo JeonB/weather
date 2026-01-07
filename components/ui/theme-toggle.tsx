@@ -1,23 +1,21 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@shared/lib/cn";
 
 export default function ThemeToggle() {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
 
-  // next-themes hydration 문제 해결을 위한 마운트 체크
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
+  // theme이 아직 로드되지 않았을 때 플레이스홀더 표시
+  if (theme === undefined) {
     return (
-      <Button variant="outline" size="icon" className="h-9 w-9">
+      <Button
+        variant="outline"
+        size="icon"
+        className="h-9 w-9"
+        aria-label="테마 전환"
+      >
         <div className="h-4 w-4" />
       </Button>
     );

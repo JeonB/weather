@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -25,15 +25,8 @@ export function EditFavoriteDialog({
   favorite,
   onSave,
 }: EditFavoriteDialogProps) {
+  // key prop을 사용하여 favorite가 변경될 때 상태 초기화
   const [alias, setAlias] = useState(favorite.alias || "");
-
-  useEffect(() => {
-    if (open) {
-      setTimeout(() => {
-        setAlias(favorite.alias || "");
-      }, 0);
-    }
-  }, [open, favorite.alias]);
 
   const handleSave = () => {
     const trimmedAlias = alias.trim();
@@ -46,7 +39,7 @@ export function EditFavoriteDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} key={favorite.id}>
       <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
           <DialogTitle>장소 별칭 수정</DialogTitle>

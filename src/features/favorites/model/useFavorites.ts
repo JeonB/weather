@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   getFavorites,
   addFavorite,
@@ -29,12 +29,18 @@ interface UseFavoritesReturn {
 }
 
 export function useFavorites(): UseFavoritesReturn {
-  const [favorites, setFavorites] = useState<FavoriteLocation[]>(() =>
-    typeof window !== "undefined" ? getFavorites() : []
-  );
-  const [canAddMore, setCanAddMore] = useState(() =>
-    typeof window !== "undefined" ? canAddMoreFavorites() : true
-  );
+  // 서버/클라이언트 하이드레이션 일치를 위해 초기값은 빈 배열
+  const [favorites, setFavorites] = useState<FavoriteLocation[]>([]);
+  const [canAddMore, setCanAddMore] = useState(true);
+
+  // 클라이언트에서만 localStorage에서 데이터 로드
+  // localStorage는 브라우저 API이므로 클라이언트에서만 접근 가능
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFavorites(getFavorites());
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setCanAddMore(canAddMoreFavorites());
+  }, []);
 
   function refresh() {
     setFavorites(getFavorites());

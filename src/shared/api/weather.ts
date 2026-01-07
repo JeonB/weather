@@ -190,15 +190,47 @@ function formatHourlyForecast(
 }
 
 export async function getWeatherData(
-  coordinates: Coordinates
+  coordinates: Coordinates,
+  locationName?: string
 ): Promise<WeatherData> {
   const [currentWeather, forecast] = await Promise.all([
     getCurrentWeatherByCoords(coordinates.lat, coordinates.lon),
     getForecastByCoords(coordinates.lat, coordinates.lon),
   ]);
 
+  // locationName이 제공되지 않으면 reverse geocoding으로 한국 지역명 찾기
+  let displayLocationName = locationName || currentWeather.name;
+
+  if (!locationName && API_KEY) {
+    try {
+      const reverseGeoUrl = `https://api.openweathermap.org/geo/1.0/reverse?lat=${coordinates.lat}&lon=${coordinates.lon}&limit=1&appid=${API_KEY}`;
+      const reverseGeoResponse = await fetch(reverseGeoUrl);
+
+      if (reverseGeoResponse.ok) {
+        const reverseGeoData = (await reverseGeoResponse.json()) as Array<{
+          name: string;
+          local_names?: Record<string, string>;
+        }>;
+
+        if (reverseGeoData && reverseGeoData.length > 0) {
+          // 한국어 이름이 있으면 사용, 없으면 영문 이름 사용
+          const koreanName = reverseGeoData[0].local_names?.ko;
+          if (koreanName) {
+            displayLocationName = koreanName;
+          } else {
+            // local_names에 ko가 없으면 name 사용 (이미 영문일 수 있음)
+            displayLocationName = reverseGeoData[0].name;
+          }
+        }
+      }
+    } catch (error) {
+      // reverse geocoding 실패 시 원래 이름 사용
+      console.warn("Reverse geocoding failed, using API name:", error);
+    }
+  }
+
   const weatherData = {
-    location: currentWeather.name,
+    location: displayLocationName,
     coordinates: {
       lat: currentWeather.coord.lat,
       lon: currentWeather.coord.lon,

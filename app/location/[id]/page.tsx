@@ -25,8 +25,8 @@ export default function LocationPage({ params }: LocationPageProps) {
   const parsedLocation = parseLocationName(locationFullName);
   const searchQuery = getLocationForWeatherSearch(parsedLocation);
 
-  const { isFavoriteLocation } = useFavorites();
-  const isFavorite = isFavoriteLocation(locationFullName);
+  const { favorites } = useFavorites();
+  const isFavorite = favorites.some((f) => f.fullName === locationFullName);
 
   const {
     data: coordinates,

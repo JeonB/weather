@@ -28,22 +28,20 @@ export default function WeatherDisplay({
     data: weather,
     isPending: isLoading,
     error: queryError,
-  } = useWeatherData(coordinates);
+  } = useWeatherData(coordinates, {
+    locationName: locationName || locationFullName,
+  });
 
-  const {
-    addToFavorites,
-    removeFromFavorites,
-    isFavoriteLocation,
-    canAddMore,
-    favorites,
-  } = useFavorites();
+  const { addToFavorites, removeFromFavorites, canAddMore, favorites } =
+    useFavorites();
 
   const displayLocationName =
     locationName ||
     weather?.location ||
     (coordinates ? "위치 확인 중..." : "위치를 선택해주세요");
   const fullName = locationFullName || displayLocationName;
-  const isFavorite = isFavoriteLocation(fullName);
+  // favorites 배열을 직접 참조하여 즉시 업데이트 반영
+  const isFavorite = favorites.some((f) => f.fullName === fullName);
   const favoriteItem = favorites.find((f) => f.fullName === fullName);
 
   function handleAddFavorite() {
