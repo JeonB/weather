@@ -1,2 +1,1 @@
-export { default as WeatherDisplay } from './WeatherDisplay';
-
+export { default as WeatherDisplay } from "./WeatherDisplay";

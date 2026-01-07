@@ -1,8 +1,9 @@
-'use client';
+"use client";
 
-import { FavoriteCard, useFavorites } from '@features/favorites';
-import { cn } from '@shared/lib/cn';
-import { MAX_FAVORITES } from '@shared/lib/storage';
+import { motion } from "motion/react";
+import { FavoriteCard, useFavorites } from "@features/favorites";
+import { cn } from "@shared/lib/cn";
+import { MAX_FAVORITES } from "@shared/lib/storage";
 
 interface FavoritesListProps {
   className?: string;
@@ -12,7 +13,7 @@ export default function FavoritesList({ className }: FavoritesListProps) {
   const { favorites, removeFromFavorites, updateAlias } = useFavorites();
 
   return (
-    <div className={cn('', className)}>
+    <div className={cn("", className)}>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold">즐겨찾기</h2>
         <span className="text-sm text-muted-foreground">
@@ -37,25 +38,31 @@ export default function FavoritesList({ className }: FavoritesListProps) {
               />
             </svg>
           </div>
-          <h3 className="font-medium text-foreground mb-1">즐겨찾기가 비어있습니다</h3>
+          <h3 className="font-medium text-foreground mb-1">
+            즐겨찾기가 비어있습니다
+          </h3>
           <p className="text-sm text-muted-foreground">
             장소를 검색하고 즐겨찾기에 추가해보세요
           </p>
         </div>
       ) : (
-
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {favorites.map((favorite) => (
-            <FavoriteCard
+          {favorites.map((favorite, index) => (
+            <motion.div
               key={favorite.id}
-              favorite={favorite}
-              onRemove={removeFromFavorites}
-              onUpdateAlias={updateAlias}
-            />
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.1 }}
+            >
+              <FavoriteCard
+                favorite={favorite}
+                onRemove={removeFromFavorites}
+                onUpdateAlias={updateAlias}
+              />
+            </motion.div>
           ))}
         </div>
       )}
     </div>
   );
 }
-

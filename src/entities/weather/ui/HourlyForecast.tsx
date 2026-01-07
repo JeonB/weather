@@ -1,27 +1,30 @@
-'use client';
+"use client";
 
-import Image from 'next/image';
-import { getWeatherIconUrl } from '@shared/api/weather';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import type { HourlyForecast as HourlyForecastType } from '@shared/api/weather.types';
-import { cn } from '@shared/lib/cn';
+import Image from "next/image";
+import { getWeatherIconUrl } from "@shared/api/weather";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import type { HourlyForecast as HourlyForecastType } from "@shared/api/weather.types";
+import { cn } from "@shared/lib/cn";
 
 interface HourlyForecastProps {
   forecasts: HourlyForecastType[];
   className?: string;
 }
 
-export default function HourlyForecast({ forecasts, className }: HourlyForecastProps) {
+export default function HourlyForecast({
+  forecasts,
+  className,
+}: HourlyForecastProps) {
   if (forecasts.length === 0) {
     return (
-      <div className={cn('text-center text-muted-foreground py-4', className)}>
+      <div className={cn("text-center text-muted-foreground py-4", className)}>
         시간대별 예보 정보가 없습니다
       </div>
     );
   }
 
   return (
-    <div className={cn('w-full', className)}>
+    <div className={cn("w-full", className)}>
       <h3 className="mb-3 text-sm font-medium text-muted-foreground">
         오늘의 시간대별 날씨
       </h3>
@@ -50,4 +53,3 @@ export default function HourlyForecast({ forecasts, className }: HourlyForecastP
     </div>
   );
 }
-

@@ -1,7 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { searchLocations, type ParsedLocation } from '@shared/lib/korea-districts';
+import { useState } from "react";
+import {
+  searchLocations,
+  type ParsedLocation,
+} from "@shared/lib/korea-districts";
 
 interface UseLocationSearchReturn {
   query: string;
@@ -17,9 +20,10 @@ interface UseLocationSearchReturn {
 export function useLocationSearch(
   onSelect?: (location: ParsedLocation) => void
 ): UseLocationSearchReturn {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState<ParsedLocation | null>(null);
+  const [selectedLocation, setSelectedLocation] =
+    useState<ParsedLocation | null>(null);
 
   const results = query.trim().length === 0 ? [] : searchLocations(query, 20);
 
@@ -32,7 +36,7 @@ export function useLocationSearch(
 
   function clearSelection() {
     setSelectedLocation(null);
-    setQuery('');
+    setQuery("");
     setIsOpen(false);
   }
 
@@ -47,4 +51,3 @@ export function useLocationSearch(
     clearSelection,
   };
 }
-

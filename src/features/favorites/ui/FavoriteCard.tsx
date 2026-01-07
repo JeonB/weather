@@ -1,16 +1,17 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@shared/lib/cn';
-import { getWeatherIconUrl } from '@shared/api/weather';
-import { useWeatherData } from '@shared/api/hooks/useWeatherData';
-import type { FavoriteLocation } from '@shared/lib/storage';
-import { EditFavoriteDialog } from './EditFavoriteDialog';
+import { useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { motion } from "motion/react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@shared/lib/cn";
+import { getWeatherIconUrl } from "@shared/api/weather";
+import { useWeatherData } from "@shared/api/hooks/useWeatherData";
+import type { FavoriteLocation } from "@shared/lib/storage";
+import { EditFavoriteDialog } from "./EditFavoriteDialog";
 
 interface FavoriteCardProps {
   favorite: FavoriteLocation;
@@ -37,14 +38,14 @@ export default function FavoriteCard({
 
   const error = favorite.coordinates
     ? queryError?.message || null
-    : '좌표 정보가 없습니다';
+    : "좌표 정보가 없습니다";
 
   const displayName = favorite.alias || favorite.displayName;
   const locationId = encodeURIComponent(favorite.fullName);
 
   if (isLoading && favorite.coordinates) {
     return (
-      <Card className={cn('overflow-hidden', className)}>
+      <Card className={cn("overflow-hidden", className)}>
         <CardContent className="p-4">
           <Skeleton className="h-4 w-24 mb-3" />
           <div className="flex items-center gap-3">
@@ -61,85 +62,108 @@ export default function FavoriteCard({
 
   return (
     <>
-      <Card className={cn('overflow-hidden group relative', className)}>
-        <Link href={`/location/${locationId}`} className="block">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-medium text-sm truncate pr-2">{displayName}</h3>
-            </div>
-
-            {error ? (
-              <p className="text-xs text-destructive">{error}</p>
-            ) : weather ? (
-              <div className="flex items-center gap-3">
-                <Image
-                  src={getWeatherIconUrl(weather.current.icon)}
-                  alt={weather.current.description}
-                  width={48}
-                  height={48}
-                  className="shrink-0"
-                />
-                <div className="flex flex-col">
-                  <span className="text-2xl font-bold">{weather.current.temp}°</span>
-                  <span className="text-xs text-muted-foreground">
-                    {weather.current.tempMin}° / {weather.current.tempMax}°
-                  </span>
-                </div>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3 }}
+        whileHover={{ scale: 1.02 }}
+        className="h-full"
+      >
+        <Card
+          className={cn("overflow-hidden group relative h-full", className)}
+        >
+          <Link href={`/location/${locationId}`} className="block">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-medium text-sm truncate pr-2">
+                  {displayName}
+                </h3>
               </div>
-            ) : null}
-          </CardContent>
-        </Link>
 
-        {/* 액션 버튼들 */}
-        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={(e) => {
-              e.preventDefault();
-              setIsEditOpen(true);
-            }}
+              {error ? (
+                <p className="text-xs text-destructive">{error}</p>
+              ) : weather ? (
+                <motion.div
+                  className="flex items-center gap-3"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <Image
+                    src={getWeatherIconUrl(weather.current.icon)}
+                    alt={weather.current.description}
+                    width={48}
+                    height={48}
+                    className="shrink-0"
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-2xl font-bold">
+                      {weather.current.temp}°
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {weather.current.tempMin}° / {weather.current.tempMax}°
+                    </span>
+                  </div>
+                </motion.div>
+              ) : null}
+            </CardContent>
+          </Link>
+
+          {/* 액션 버튼들 */}
+          <motion.div
+            className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+            initial={{ opacity: 0 }}
+            whileHover={{ opacity: 1 }}
           >
-            <svg
-              className="h-3.5 w-3.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={(e) => {
+                e.preventDefault();
+                setIsEditOpen(true);
+              }}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-              />
-            </svg>
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-destructive hover:text-destructive"
-            onClick={(e) => {
-              e.preventDefault();
-              onRemove(favorite.id);
-            }}
-          >
-            <svg
-              className="h-3.5 w-3.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+              <svg
+                className="h-3.5 w-3.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                />
+              </svg>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-destructive hover:text-destructive"
+              onClick={(e) => {
+                e.preventDefault();
+                onRemove(favorite.id);
+              }}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </Button>
-        </div>
-      </Card>
+              <svg
+                className="h-3.5 w-3.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </Button>
+          </motion.div>
+        </Card>
+      </motion.div>
 
       <EditFavoriteDialog
         open={isEditOpen}
@@ -153,4 +177,3 @@ export default function FavoriteCard({
     </>
   );
 }
-

@@ -1,15 +1,17 @@
-'use client';
+"use client";
 
-import { useTheme } from 'next-themes';
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@shared/lib/cn';
+import { useTheme } from "next-themes";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@shared/lib/cn";
 
 export default function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
+  // next-themes hydration 문제 해결을 위한 마운트 체크
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -24,10 +26,13 @@ export default function ThemeToggle() {
   return (
     <div className="flex items-center gap-1 border rounded-md p-1">
       <Button
-        variant={theme === 'light' ? 'default' : 'ghost'}
+        variant={theme === "light" ? "default" : "ghost"}
         size="sm"
-        onClick={() => setTheme('light')}
-        className={cn('h-7 px-2', theme === 'light' && 'bg-primary text-primary-foreground')}
+        onClick={() => setTheme("light")}
+        className={cn(
+          "h-7 px-2",
+          theme === "light" && "bg-primary text-primary-foreground"
+        )}
         aria-label="라이트 모드"
       >
         <svg
@@ -45,10 +50,13 @@ export default function ThemeToggle() {
         </svg>
       </Button>
       <Button
-        variant={theme === 'dark' ? 'default' : 'ghost'}
+        variant={theme === "dark" ? "default" : "ghost"}
         size="sm"
-        onClick={() => setTheme('dark')}
-        className={cn('h-7 px-2', theme === 'dark' && 'bg-primary text-primary-foreground')}
+        onClick={() => setTheme("dark")}
+        className={cn(
+          "h-7 px-2",
+          theme === "dark" && "bg-primary text-primary-foreground"
+        )}
         aria-label="다크 모드"
       >
         <svg
@@ -66,10 +74,13 @@ export default function ThemeToggle() {
         </svg>
       </Button>
       <Button
-        variant={theme === 'system' ? 'default' : 'ghost'}
+        variant={theme === "system" ? "default" : "ghost"}
         size="sm"
-        onClick={() => setTheme('system')}
-        className={cn('h-7 px-2', theme === 'system' && 'bg-primary text-primary-foreground')}
+        onClick={() => setTheme("system")}
+        className={cn(
+          "h-7 px-2",
+          theme === "system" && "bg-primary text-primary-foreground"
+        )}
         aria-label="시스템 모드"
       >
         <svg
@@ -89,4 +100,3 @@ export default function ThemeToggle() {
     </div>
   );
 }
-

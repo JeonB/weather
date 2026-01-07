@@ -1,4 +1,4 @@
-import koreaDistrictsData from '@/korea_districts.json';
+import koreaDistrictsData from "@/korea_districts.json";
 
 export interface ParsedLocation {
   fullName: string;
@@ -12,7 +12,7 @@ export interface ParsedLocation {
 const koreaDistricts: string[] = koreaDistrictsData as string[];
 
 export function parseLocationName(fullName: string): ParsedLocation {
-  const parts = fullName.split('-');
+  const parts = fullName.split("-");
   const city = parts[0] || fullName;
   const district = parts[1] || null;
   const dong = parts[2] || null;
@@ -43,7 +43,7 @@ export function searchLocations(query: string, limit = 20): ParsedLocation[] {
     .filter((location) => {
       const normalizedLocation = location.toLowerCase();
       // 하이픈으로 구분된 각 부분에서 검색어 매칭
-      const parts = normalizedLocation.split('-');
+      const parts = normalizedLocation.split("-");
       return parts.some((part) => part.includes(normalizedQuery));
     })
     .slice(0, limit)
@@ -70,7 +70,7 @@ export function searchLocations(query: string, limit = 20): ParsedLocation[] {
 
     if (aLevel !== bLevel) return aLevel - bLevel;
 
-    return a.fullName.localeCompare(b.fullName, 'ko');
+    return a.fullName.localeCompare(b.fullName, "ko");
   });
 }
 
@@ -86,4 +86,3 @@ export function getLocationForWeatherSearch(location: ParsedLocation): string {
 export function getAllLocations(): ParsedLocation[] {
   return koreaDistricts.map(parseLocationName);
 }
-

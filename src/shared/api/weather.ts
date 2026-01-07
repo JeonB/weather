@@ -1,10 +1,14 @@
-import type {
-  CurrentWeatherResponse,
-  ForecastResponse,
-  WeatherData,
-  HourlyForecast,
-  Coordinates,
-} from "./weather.types";
+import { z } from "zod";
+import {
+  CurrentWeatherResponseSchema,
+  ForecastResponseSchema,
+  WeatherDataSchema,
+  type CurrentWeatherResponse,
+  type ForecastResponse,
+  type WeatherData,
+  type HourlyForecast,
+  type Coordinates,
+} from "./schemas/weather.schemas";
 
 const API_BASE_URL = "https://api.openweathermap.org/data/2.5";
 const API_KEY = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY;
@@ -17,7 +21,8 @@ const API_WINDOW_MS = 60000; // 1분
 
 async function fetchWeatherAPI<T>(
   endpoint: string,
-  params: Record<string, string>
+  params: Record<string, string>,
+  schema?: z.ZodSchema<T>
 ): Promise<T> {
   // Rate limiting 체크
   const now = Date.now();
@@ -59,43 +64,77 @@ async function fetchWeatherAPI<T>(
     );
   }
 
-  return response.json();
+  const data = await response.json();
+
+  // 스키마가 제공된 경우 검증
+  if (schema) {
+    try {
+      return schema.parse(data);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        throw new Error(
+          `API 응답 형식이 올바르지 않습니다: ${error.issues
+            .map((issue) => issue.message)
+            .join(", ")}`
+        );
+      }
+      throw error;
+    }
+  }
+
+  return data;
 }
 
 export async function getCurrentWeatherByCoords(
   lat: number,
   lon: number
 ): Promise<CurrentWeatherResponse> {
-  return fetchWeatherAPI<CurrentWeatherResponse>("/weather", {
-    lat: lat.toString(),
-    lon: lon.toString(),
-  });
+  return fetchWeatherAPI<CurrentWeatherResponse>(
+    "/weather",
+    {
+      lat: lat.toString(),
+      lon: lon.toString(),
+    },
+    CurrentWeatherResponseSchema
+  );
 }
 
 export async function getCurrentWeatherByCity(
   cityName: string
 ): Promise<CurrentWeatherResponse> {
-  return fetchWeatherAPI<CurrentWeatherResponse>("/weather", {
-    q: cityName,
-  });
+  return fetchWeatherAPI<CurrentWeatherResponse>(
+    "/weather",
+    {
+      q: cityName,
+    },
+    CurrentWeatherResponseSchema
+  );
 }
 
 export async function getForecastByCoords(
   lat: number,
   lon: number
 ): Promise<ForecastResponse> {
-  return fetchWeatherAPI<ForecastResponse>("/forecast", {
-    lat: lat.toString(),
-    lon: lon.toString(),
-  });
+  return fetchWeatherAPI<ForecastResponse>(
+    "/forecast",
+    {
+      lat: lat.toString(),
+      lon: lon.toString(),
+    },
+    ForecastResponseSchema
+  );
 }
 
 export async function getForecastByCity(
   cityName: string
 ): Promise<ForecastResponse> {
-  return fetchWeatherAPI<ForecastResponse>("/forecast", {
-    q: cityName,
-  });
+  return fetchWeatherAPI<ForecastResponse>(
+    "/forecast",
+    {
+      q: cityName,
+    },
+    ForecastResponseSchema
+  );
 }
 
 function formatHourlyForecast(
@@ -158,7 +197,7 @@ export async function getWeatherData(
     getForecastByCoords(coordinates.lat, coordinates.lon),
   ]);
 
-  return {
+  const weatherData = {
     location: currentWeather.name,
     coordinates: {
       lat: currentWeather.coord.lat,
@@ -176,6 +215,9 @@ export async function getWeatherData(
     },
     hourlyForecast: formatHourlyForecast(forecast),
   };
+
+  // 최종 데이터 검증
+  return WeatherDataSchema.parse(weatherData);
 }
 
 export async function getWeatherDataByLocationName(

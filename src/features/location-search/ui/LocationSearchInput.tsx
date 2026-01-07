@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useRef, useEffect, type KeyboardEvent } from 'react';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { cn } from '@shared/lib/cn';
-import { useLocationSearch } from '../model/useLocationSearch';
-import type { ParsedLocation } from '@shared/lib/korea-districts';
+import { useRef, useEffect, type KeyboardEvent } from "react";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@shared/lib/cn";
+import { useLocationSearch } from "../model/useLocationSearch";
+import type { ParsedLocation } from "@shared/lib/korea-districts";
 
 interface LocationSearchInputProps {
   onSelect: (location: ParsedLocation) => void;
@@ -15,20 +15,14 @@ interface LocationSearchInputProps {
 
 export default function LocationSearchInput({
   onSelect,
-  placeholder = '장소를 검색하세요 (예: 서울, 종로구, 청운동)',
+  placeholder = "장소를 검색하세요 (예: 서울, 종로구, 청운동)",
   className,
 }: LocationSearchInputProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const {
-    query,
-    setQuery,
-    results,
-    isOpen,
-    setIsOpen,
-    selectLocation,
-  } = useLocationSearch(onSelect);
+  const { query, setQuery, results, isOpen, setIsOpen, selectLocation } =
+    useLocationSearch(onSelect);
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
@@ -41,8 +35,8 @@ export default function LocationSearchInput({
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [setIsOpen]);
 
   const handleInputChange = (value: string) => {
@@ -51,7 +45,7 @@ export default function LocationSearchInput({
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Escape') {
+    if (e.key === "Escape") {
       setIsOpen(false);
       inputRef.current?.blur();
     }
@@ -59,11 +53,11 @@ export default function LocationSearchInput({
 
   const handleSelect = (location: ParsedLocation) => {
     selectLocation(location);
-    setQuery('');
+    setQuery("");
   };
 
   return (
-    <div ref={containerRef} className={cn('relative w-full', className)}>
+    <div ref={containerRef} className={cn("relative w-full", className)}>
       <Input
         ref={inputRef}
         type="text"
@@ -113,4 +107,3 @@ export default function LocationSearchInput({
     </div>
   );
 }
-

@@ -2,6 +2,222 @@
 alwaysApply: false
 ---
 
+## 1. 코드 작성 규칙
+
+### 절대 하지 말 것
+
+- **타입 `any` 사용 금지**: TypeScript 엄격 모드 준수
+- **컴포넌트에 비즈니스 로직 작성 금지**: 프론트엔드 컴포넌트에 직접적인 비즈니스 로직 작성 금지
+- **직접적인 DOM 조작 금지**: React의 추상화 계층 사용
+- **지시 없이 npm run build 금지**: 임의로 build 명령 실행 금지
+- **`console.log` 프로덕션 코드에 남기기 금지**: 디버깅 코드는 배포 전 제거
+- **Deprecated 문법 사용 금지**: React 19 기준 deprecated된 API 사용 금지 (예: `forwardRef`, `React.FC` 등)
+- 개발 중 로깅은 `console.error`/`console.warn`만 허용하며 배포 전 제거 또는 통합된 로깅 유틸로 변경
+
+### 타입 정의 패턴
+
+- **공통 타입**: `lib/types/common.types.ts`에 공통 유틸리티 타입 정의
+- **도메인 타입**: 도메인별로 `*.types.ts` 파일 분리
+- **API 응답 타입**: API 스펙에 맞춰 정확한 타입 정의
+- **제네릭 활용**: 재사용 가능한 타입은 제네릭으로 추상화
+- **유니온 타입**: 상태나 카테고리를 나타낼 때 유니온 타입 사용
+- **타입 가드**: 런타임 타입 검증이 필요하면 타입 가드 함수 작성
+- **타입 import**: 타입만 import할 때는 `import type` 사용
+
+### 비동기 처리 패턴
+
+- **서버 컴포넌트**: async/await 직접 사용, Suspense와 함께 사용
+- **클라이언트 컴포넌트**: TanStack Query 사용 (useQuery, useMutation)
+- **로딩 상태**: Suspense 경계와 `isPending` 상태 적절히 활용
+- **낙관적 업데이트**: 낙관적 업데이트는 `useMutation`의 `onMutate` 활용
+- **병렬 페칭**: 독립적인 데이터는 `Promise.all()`로 병렬 처리
+- **순차 페칭**: 의존적인 데이터는 순차적으로 처리
+
+### 컴포넌트 설계
+
+- **UI 라이브러리**: shadcn/ui 사용 및 커스텀
+- **서버 컴포넌트 우선**: 기본적으로 서버컴포넌트로 구현하며, 상호작용이 필요한 경우에만 클라이언트로 전환("use client")
+- **클라이언트 기능 분리**: 클라이언트 사이드 기능은 별도 컴포넌트로 분리
+- **PascalCase 네이밍**: 컴포넌트명은 기능을 명확히 나타내는 PascalCase 사용
+- **재사용 가능한 컴포넌트 설계**: UI 컴포넌트는 `components/ui/`에 분리
+- **가독성 좋은 코드**: 항상 가독성과 유지보수성을 고려한 코드 구현
+- 파일당 기본 export 1개 사용: `export default function ComponentName()` 양식 선호
+- 클라이언트 컴포넌트는 최상단에 정확히 한 줄의 `'use client'` 선언
+- 서버 컴포넌트/액션은 필요한 경우 `'use server'` 명시
+- **UI와 비즈니스 로직 분리**: 컴포넌트 UI와 무관한 비즈니스 로직은 훅으로 분리
+
+### 서버/클라이언트 컴포넌트 구분 기준
+
+**서버 컴포넌트 사용 (기본)**
+
+- 데이터 페칭 (직접 async 함수 호출)
+- 백엔드 리소스 접근 (데이터베이스, 파일 시스템)
+- 민감한 정보 사용 (API 키, 토큰)
+- 큰 의존성 사용 (서버에만 필요한 라이브러리)
+
+**클라이언트 컴포넌트로 전환 필요**
+
+- 이벤트 핸들러 사용 (`onClick`, `onChange` 등)
+- 상태 훅 사용 (`useState`, `useReducer` 등)
+- 생명주기 훅 사용 (`useEffect`, `useLayoutEffect`)
+- 브라우저 전용 API 사용 (`window`, `localStorage` 등)
+- 커스텀 훅 사용 (내부적으로 클라이언트 훅을 사용하는 경우)
+- Context API 사용 (Provider/Consumer)
+
+**하이브리드 패턴**
+
+- 서버 컴포넌트에서 클라이언트 컴포넌트를 자식으로 렌더링
+- 클라이언트 컴포넌트는 가능한 한 얇게 유지 (최소 상호작용만)
+
+### 문법
+
+- **라이브러리의 문법은 package.json 버전 준수**: 버전에 맞는 최신 문법 사용할 것
+- **React 19 최신 문법 사용**:
+  - `forwardRef` 대신 ref를 일반 prop으로 전달
+  - `React.FC` 사용 금지, 명시적 props 타입과 함수 선언 사용
+  - deprecated된 API는 최신 대체 API로 전환
+- **폼 필드 요소에 항상 name 속성을 명시**: 'A form field element should have an id or name attribute' 경고가 발생되지 않게 할 것
+
+### React Import 규칙
+
+```typescript
+// React 타입 사용 시 named import 사용
+import { type ReactNode, type ComponentProps } from "react";
+```
+
+- `React.FC` 사용 금지, 명시적 props 타입과 실제 반환 사용
+- `forwardRef` 사용 금지, ref를 일반 prop으로 전달 (React 19+)
+- `use client` 파일에서만 React 훅 사용
+- import 순서: 외부 패키지 → 내부 alias(`@/`) → 상대 경로 → 스타일/정적 자원
+
+## 2. 데이터 관리 규칙
+
+### TanStack Query 사용
+
+- **서버-클라이언트 데이터 동기화**: TanStack Query 사용
+- **QueryClient 설정**: 적절한 staleTime 및 retry 설정
+- **QueryProvider로 전역 구성**: `refetchOnWindowFocus: false` 설정
+- **쿼리 키 컨벤션**: `['domain', 'entity', params...]` 형식 사용
+
+### API 호출 패턴
+
+- **실제 API 호출**: Mock 데이터 사용 금지 (개발 단계 제외)
+- **에러 처리**: try-catch와 적절한 에러 메시지 제공
+- **타입 안전한 API 응답**: API 응답 타입을 `lib/types/`에 명확히 정의
+- **API 클라이언트**: `lib/api-client.ts` 사용
+- **BFF 활용**: 비즈니스 로직은 BFF 기능을 활용하여 UI에 맞는 API 설계
+- API base URL은 환경 변수로 관리
+
+### 에러 처리 전략
+
+- **에러 바운더리**: 클라이언트 컴포넌트 에러는 React Error Boundary로 처리
+- **서버 액션 에러**: `'use server'` 함수는 try-catch로 감싸고 사용자 친화적 메시지 반환
+- **API 에러 처리**:
+  - HTTP 에러는 `lib/http.ts`에서 중앙 처리
+  - 401/403은 자동 리다이렉트
+  - 500 에러는 사용자에게 "일시적 오류" 메시지 표시
+- **에러 타입 정의**: `lib/types/errors.types.ts`에 에러 타입 명시
+- **에러 로깅**: 프로덕션에서는 에러 추적 서비스 연동 (예: Sentry)
+- **비동기 에러**: Promise rejection은 항상 `.catch()` 또는 try-catch로 처리
+
+## 3. 파일 구조 규칙
+
+### 디렉토리 구조
+
+```text
+app/                    # Next.js App Router 페이지
+components/            # 재사용 가능한 컴포넌트
+├── ui/               # 기본 UI 컴포넌트 (shadcn/ui)
+├── auth/             # 인증 관련 컴포넌트
+├── training/         # 훈련 관련 컴포넌트
+│   └── sections/    # 각 회기별 컴포넌트
+├── layout/          # 레이아웃 컴포넌트
+└── providers/       # Context Provider
+lib/                  # 유틸리티 및 설정
+├── actions/         # Server Actions
+├── hooks/           # Custom Hooks
+├── types/           # TypeScript 타입 정의
+├── utils/           # 유틸리티 함수
+└── schemas/         # Zod 스키마
+```
+
+### 파일 네이밍
+
+- **컴포넌트**: `kebab-case.tsx` (예: `signin-modal.tsx`)
+- **타입 정의**: `*.types.ts` 분리
+- **상수**: `constants/index.ts` 또는 `*.constants.ts`
+- **유틸리티**: `*.utils.ts` 분리
+- **스키마**: `*.schemas.ts` 분리
+- **훅**: `use*.ts` 형식 (예: `useSurveyData.ts`)
+- **서버 액션**: `lib/actions/` 디렉토리에 위치
+- **Provider**: 전역 Provider는 `components/providers/`에 위치
+
+## 4. 인증 및 보안
+
+### 인증 관리
+
+- **서버 사이드**: Next.js 서버 액션 활용
+- **클라이언트 사이드**: 필요한 경우에만 클라이언트 상태 관리 활용
+- **토큰 관리**: 안전한 토큰 저장 및 관리
+- **자동 리다이렉트**: 인증 실패 시 적절한 페이지로 리다이렉트
+
+### 보안 규칙
+
+- **환경 변수 사용**: 민감한 정보는 환경 변수로 관리
+- **토큰 만료 처리**: 자동 로그아웃 및 리다이렉트
+- **권한 기반 접근**: 사용자 역할에 따른 접근 제어
+- 민감 로그 금지: 토큰/쿠키/개인정보는 로그에 남기지 않음
+- 에러 메시지 표준화: 사용자 친화적 메시지 제공
+
+## 5. 폼 및 유효성 검사
+
+### React Hook Form + Zod
+
+- **스키마 기반 검증**: Zod 스키마로 타입 안전성 확보
+- **에러 처리**: 사용자 친화적인 에러 메시지
+- **로딩 상태**: 폼 제출 중 로딩 상태 표시
+- 입력 컴포넌트는 `components/ui/`의 공통 컴포넌트 사용
+- 스키마는 `lib/schemas/`에 분리
+
+## 6. 성능 및 접근성
+
+### 성능 최적화
+
+- **이미지 최적화**: Next.js Image 컴포넌트 사용 (필수)
+- **코드 분할**: 동적 import 사용 (`next/dynamic` 또는 `React.lazy`)
+- **캐싱 전략**:
+  - TanStack Query의 `staleTime`, `cacheTime` 설정
+  - Next.js의 `cache`, `revalidate` 활용 (서버 컴포넌트)
+- **불필요한 재렌더링 방지**:
+  - `React.memo`는 props가 자주 변경되지 않는 경우에만 사용
+  - `useMemo`는 계산 비용이 큰 경우에만 사용
+  - `useCallback`은 자식 컴포넌트에 함수를 전달하는 경우에만 사용
+- **번들 크기 관리**:
+  - `next bundle analyzer`로 번들 크기 모니터링
+  - 큰 라이브러리는 동적 import 고려
+- **Suspense 경계**: 데이터 페칭이 있는 컴포넌트는 Suspense로 감싸기
+
+## 7. 문제 해결 우선순위
+
+1. **실제 동작하는 해결책 찾기**: 기능이 정상 작동하는 것이 최우선
+2. **기존 코드 패턴 분석 후 일관성 유지**: 프로젝트의 기존 패턴 준수
+3. **타입 안전성 보장**: TypeScript의 타입 시스템 활용
+4. **성능 고려**: 불필요한 연산 및 재렌더링 최소화
+5. **중복 제거**: util/컴포넌트 재사용 우선
+
+## 8. 스타일링 규칙
+
+### 최신 Tailwind CSS 사용
+
+- **유틸리티 우선**: Tailwind CSS 유틸리티 클래스 사용
+- **커스텀 스타일 최소화**: `globals.css`에 전역 스타일만 정의
+- **반응형 디자인**: `sm:`, `md:`, `lg:`, `xl:` 브레이크포인트 사용
+- **다크모드**: `dark:` 접두사로 다크모드 지원
+- **클래스 병합**: `cn()` 유틸리티 사용 (tailwind-merge)
+- **컴포넌트 스타일링**: shadcn/ui 컴포넌트는 `className` prop으로 커스터마이징
+- **인라인 스타일 금지**: Tailwind 클래스로 모든 스타일링 처리
+- **CSS 모듈/스타일드 컴포넌트 금지**: Tailwind CSS 일원화
+
 # Weather App 프로젝트 전용 규칙
 
 ## 1. 아키텍처: Feature Sliced Design (FSD)

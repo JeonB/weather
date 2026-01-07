@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from "react";
 import {
   getFavorites,
   addFavorite,
@@ -10,12 +10,16 @@ import {
   isFavorite,
   canAddMoreFavorites,
   type FavoriteLocation,
-} from '@shared/lib/storage';
-import type { Coordinates } from '@shared/api/weather.types';
+} from "@shared/lib/storage";
+import type { Coordinates } from "@shared/api/weather.types";
 
 interface UseFavoritesReturn {
   favorites: FavoriteLocation[];
-  addToFavorites: (fullName: string, displayName: string, coordinates?: Coordinates | null) => boolean;
+  addToFavorites: (
+    fullName: string,
+    displayName: string,
+    coordinates?: Coordinates | null
+  ) => boolean;
   removeFromFavorites: (id: string) => boolean;
   updateAlias: (id: string, alias: string | null) => boolean;
   updateCoordinates: (id: string, coordinates: Coordinates) => boolean;
@@ -25,19 +29,23 @@ interface UseFavoritesReturn {
 }
 
 export function useFavorites(): UseFavoritesReturn {
-  const [favorites, setFavorites] = useState<FavoriteLocation[]>([]);
-  const [canAddMore, setCanAddMore] = useState(true);
+  const [favorites, setFavorites] = useState<FavoriteLocation[]>(() =>
+    typeof window !== "undefined" ? getFavorites() : []
+  );
+  const [canAddMore, setCanAddMore] = useState(() =>
+    typeof window !== "undefined" ? canAddMoreFavorites() : true
+  );
 
   function refresh() {
     setFavorites(getFavorites());
     setCanAddMore(canAddMoreFavorites());
   }
 
-  useEffect(() => {
-    refresh();
-  }, []);
-
-  function addToFavorites(fullName: string, displayName: string, coordinates: Coordinates | null = null): boolean {
+  function addToFavorites(
+    fullName: string,
+    displayName: string,
+    coordinates: Coordinates | null = null
+  ): boolean {
     const result = addFavorite(fullName, displayName, coordinates);
     if (result) {
       refresh();
@@ -88,4 +96,3 @@ export function useFavorites(): UseFavoritesReturn {
     refresh,
   };
 }
-

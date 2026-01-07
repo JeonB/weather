@@ -1,4 +1,4 @@
-import type { Coordinates } from '@shared/api/weather.types';
+import type { Coordinates } from "@shared/api/weather.types";
 
 export interface FavoriteLocation {
   id: string;
@@ -9,11 +9,11 @@ export interface FavoriteLocation {
   createdAt: number;
 }
 
-const FAVORITES_KEY = 'weather-app-favorites';
+const FAVORITES_KEY = "weather-app-favorites";
 const MAX_FAVORITES = 6;
 
 function isBrowser(): boolean {
-  return typeof window !== 'undefined';
+  return typeof window !== "undefined";
 }
 
 export function getFavorites(): FavoriteLocation[] {
@@ -34,7 +34,7 @@ export function saveFavorites(favorites: FavoriteLocation[]): void {
   try {
     localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
   } catch (error) {
-    console.error('Failed to save favorites:', error);
+    console.error("Failed to save favorites:", error);
   }
 }
 
@@ -94,7 +94,10 @@ export function updateFavoriteAlias(id: string, alias: string | null): boolean {
   return true;
 }
 
-export function updateFavoriteCoordinates(id: string, coordinates: Coordinates): boolean {
+export function updateFavoriteCoordinates(
+  id: string,
+  coordinates: Coordinates
+): boolean {
   const favorites = getFavorites();
   const index = favorites.findIndex((f) => f.id === id);
 
@@ -117,7 +120,9 @@ export function getFavoriteById(id: string): FavoriteLocation | null {
   return favorites.find((f) => f.id === id) || null;
 }
 
-export function getFavoriteByFullName(fullName: string): FavoriteLocation | null {
+export function getFavoriteByFullName(
+  fullName: string
+): FavoriteLocation | null {
   const favorites = getFavorites();
   return favorites.find((f) => f.fullName === fullName) || null;
 }
@@ -127,4 +132,3 @@ export function canAddMoreFavorites(): boolean {
 }
 
 export { MAX_FAVORITES };
-

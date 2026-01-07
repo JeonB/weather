@@ -1,2 +1,1 @@
-export { useGeolocation } from './model/useGeolocation';
-
+export { useGeolocation } from "./model/useGeolocation";

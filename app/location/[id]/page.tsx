@@ -1,13 +1,17 @@
-'use client';
+"use client";
 
-import { use } from 'react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { WeatherDisplay } from '@widgets/weather-display';
-import ThemeToggle from '@/components/ui/theme-toggle';
-import { parseLocationName, getLocationForWeatherSearch } from '@shared/lib/korea-districts';
-import { useGeocoding } from '@shared/api/hooks/useGeocoding';
-import { useFavorites } from '@features/favorites';
+import { use } from "react";
+import Link from "next/link";
+import { motion } from "motion/react";
+import { Button } from "@/components/ui/button";
+import { WeatherDisplay } from "@widgets/weather-display";
+import ThemeToggle from "@/components/ui/theme-toggle";
+import {
+  parseLocationName,
+  getLocationForWeatherSearch,
+} from "@shared/lib/korea-districts";
+import { useGeocoding } from "@shared/api/hooks/useGeocoding";
+import { useFavorites } from "@features/favorites";
 
 interface LocationPageProps {
   params: Promise<{
@@ -36,7 +40,12 @@ export default function LocationPage({ params }: LocationPageProps) {
     <div className="min-h-screen bg-linear-to-br from-sky-50 to-blue-100 dark:from-slate-900 dark:to-slate-800">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* 헤더 */}
-        <header className="mb-8">
+        <motion.header
+          className="mb-8"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
           <div className="flex items-center justify-between mb-4">
             <Link href="/">
               <Button variant="ghost" size="sm">
@@ -89,13 +98,15 @@ export default function LocationPage({ params }: LocationPageProps) {
               {parsedLocation.dong && ` ${parsedLocation.district}`}
             </p>
           )}
-        </header>
+        </motion.header>
 
         {/* 로딩 상태 */}
         {isLoading && (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <p className="mt-2 text-muted-foreground">날씨 정보를 불러오는 중...</p>
+            <p className="mt-2 text-muted-foreground">
+              날씨 정보를 불러오는 중...
+            </p>
           </div>
         )}
 
@@ -128,15 +139,20 @@ export default function LocationPage({ params }: LocationPageProps) {
 
         {/* 날씨 정보 */}
         {coordinates && !isLoading && !error && (
-          <WeatherDisplay
-            coordinates={coordinates}
-            locationName={parsedLocation.displayName}
-            locationFullName={locationFullName}
-            showFavoriteButton
-          />
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+          >
+            <WeatherDisplay
+              coordinates={coordinates}
+              locationName={parsedLocation.displayName}
+              locationFullName={locationFullName}
+              showFavoriteButton
+            />
+          </motion.div>
         )}
       </div>
     </div>
   );
 }
-

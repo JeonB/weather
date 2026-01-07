@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "motion/react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WeatherCard, HourlyForecast } from "@entities/weather";
@@ -127,36 +128,59 @@ export default function WeatherDisplay({
   }
 
   return (
-    <Card className={cn("", className)}>
-      <CardContent className="py-8">
-        <div className="flex flex-col items-center gap-6">
-          {showFavoriteButton && (
-            <div className="w-full flex justify-end">
-              <AddFavoriteButton
-                isFavorite={isFavorite}
-                canAdd={canAddMore}
-                onAdd={handleAddFavorite}
-                onRemove={handleRemoveFavorite}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+    >
+      <Card className={cn("", className)}>
+        <CardContent className="py-8">
+          <div className="flex flex-col items-center gap-6">
+            {showFavoriteButton && (
+              <motion.div
+                className="w-full flex justify-end"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <AddFavoriteButton
+                  isFavorite={isFavorite}
+                  canAdd={canAddMore}
+                  onAdd={handleAddFavorite}
+                  onRemove={handleRemoveFavorite}
+                />
+              </motion.div>
+            )}
+
+            <motion.div
+              key={weather.location}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              <WeatherCard
+                location={displayLocationName}
+                temp={weather.current.temp}
+                tempMin={weather.current.tempMin}
+                tempMax={weather.current.tempMax}
+                description={weather.current.description}
+                icon={weather.current.icon}
+                humidity={weather.current.humidity}
+                windSpeed={weather.current.windSpeed}
               />
-            </div>
-          )}
+            </motion.div>
 
-          <WeatherCard
-            location={displayLocationName}
-            temp={weather.current.temp}
-            tempMin={weather.current.tempMin}
-            tempMax={weather.current.tempMax}
-            description={weather.current.description}
-            icon={weather.current.icon}
-            humidity={weather.current.humidity}
-            windSpeed={weather.current.windSpeed}
-          />
-
-          <div className="w-full border-t pt-6">
-            <HourlyForecast forecasts={weather.hourlyForecast} />
+            <motion.div
+              className="w-full border-t pt-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              <HourlyForecast forecasts={weather.hourlyForecast} />
+            </motion.div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }

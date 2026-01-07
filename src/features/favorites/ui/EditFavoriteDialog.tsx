@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import type { FavoriteLocation } from '@shared/lib/storage';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import type { FavoriteLocation } from "@shared/lib/storage";
 
 interface EditFavoriteDialogProps {
   open: boolean;
@@ -25,11 +25,13 @@ export function EditFavoriteDialog({
   favorite,
   onSave,
 }: EditFavoriteDialogProps) {
-  const [alias, setAlias] = useState(favorite.alias || '');
+  const [alias, setAlias] = useState(favorite.alias || "");
 
   useEffect(() => {
     if (open) {
-      setAlias(favorite.alias || '');
+      setTimeout(() => {
+        setAlias(favorite.alias || "");
+      }, 0);
     }
   }, [open, favorite.alias]);
 
@@ -39,7 +41,7 @@ export function EditFavoriteDialog({
   };
 
   const handleReset = () => {
-    setAlias('');
+    setAlias("");
     onSave(null);
   };
 
@@ -57,7 +59,10 @@ export function EditFavoriteDialog({
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="alias-input" className="text-sm text-muted-foreground">
+            <label
+              htmlFor="alias-input"
+              className="text-sm text-muted-foreground"
+            >
               별칭 (선택사항)
             </label>
             <Input
@@ -84,4 +89,3 @@ export function EditFavoriteDialog({
     </Dialog>
   );
 }
-
