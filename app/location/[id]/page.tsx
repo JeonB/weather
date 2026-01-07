@@ -4,6 +4,7 @@ import { use } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { WeatherDisplay } from '@widgets/weather-display';
+import ThemeToggle from '@/components/ui/theme-toggle';
 import { parseLocationName, getLocationForWeatherSearch } from '@shared/lib/korea-districts';
 import { useGeocoding } from '@shared/api/hooks/useGeocoding';
 import { useFavorites } from '@features/favorites';
@@ -36,24 +37,27 @@ export default function LocationPage({ params }: LocationPageProps) {
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* 헤더 */}
         <header className="mb-8">
-          <Link href="/">
-            <Button variant="ghost" size="sm" className="mb-4">
-              <svg
-                className="h-4 w-4 mr-2"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-              홈으로
-            </Button>
-          </Link>
+          <div className="flex items-center justify-between mb-4">
+            <Link href="/">
+              <Button variant="ghost" size="sm">
+                <svg
+                  className="h-4 w-4 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+                홈으로
+              </Button>
+            </Link>
+            <ThemeToggle />
+          </div>
 
           <div className="flex items-center gap-2">
             <h1 className="text-2xl md:text-3xl font-bold text-foreground">

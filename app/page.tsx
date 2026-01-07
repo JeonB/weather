@@ -5,6 +5,7 @@ import { SearchBar } from "@widgets/search-bar";
 import { FavoritesList } from "@widgets/favorites-list";
 import { WeatherDisplay } from "@widgets/weather-display";
 import { useGeolocation } from "@features/geolocation";
+import ThemeToggle from "@/components/ui/theme-toggle";
 import type { ParsedLocation } from "@shared/lib/korea-districts";
 
 export default function HomePage() {
@@ -26,6 +27,9 @@ export default function HomePage() {
       <div className="container mx-auto px-4 py-6 sm:py-8 max-w-4xl">
         {/* 헤더 */}
         <header className="text-center mb-6 sm:mb-8">
+          <div className="flex justify-end mb-4">
+            <ThemeToggle />
+          </div>
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2">
             🌤️ 날씨 앱
           </h1>

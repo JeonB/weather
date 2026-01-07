@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import QueryProvider from "@/src/app/providers/QueryProvider";
+import ThemeProvider from "@/src/app/providers/ThemeProvider";
 import FavoritesQuickAccess from "@/components/layout/FavoritesQuickAccess";
 import "./globals.css";
 
@@ -29,10 +30,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}
       >
-        <QueryProvider>
-          {children}
-          <FavoritesQuickAccess />
-        </QueryProvider>
+        <ThemeProvider>
+          <QueryProvider>
+            {children}
+            <FavoritesQuickAccess />
+          </QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
