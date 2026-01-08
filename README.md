@@ -8,17 +8,12 @@
 
 - Node.js 18 이상
 - pnpm (권장) 또는 npm, yarn
-- OpenWeatherMap API 키
 
 ### 설치 및 실행
 
 ```bash
 # 의존성 설치
 pnpm install
-
-# 환경 변수 설정
-# .env.local 파일을 생성하고 다음 내용을 추가하세요:
-NEXT_PUBLIC_OPENWEATHER_API_KEY=your_api_key_here
 
 # 개발 서버 실행
 pnpm dev
@@ -71,28 +66,22 @@ pnpm dev
 | Language        | TypeScript 5                |
 | Styling         | Tailwind CSS 4              |
 | UI Components   | shadcn/ui                   |
-| API             | OpenWeatherMap API          |
+| API             | Open-Meteo API              |
 | Package Manager | pnpm                        |
 
 ## 기술적 의사결정 및 이유
 
-### 1. Feature Sliced Design (FSD) 아키텍처
+### 1. Open-Meteo API 선택
 
-- **선택 이유**: 코드의 명확한 구조화와 유지보수성 향상
+- **선택 이유**: OpenWeatherMap 무료 플랜은 과거 데이터를 제공하지 않아 오늘 0시부터의 최저/최고 기온을 계산할 수 없었으나, Open-Meteo는 과거 데이터 제공으로 정확한 일별 최저/최고 기온을 무료로 제공
 - **장점**:
-  - 레이어 간 의존성 규칙으로 순환 참조 방지
-  - 기능 단위로 코드 분리하여 확장성 확보
-  - 팀 협업 시 코드 위치 예측 가능
+  - API 키 불필요 (완전 무료)
+  - 과거 데이터 제공 (past_days 파라미터)으로 오늘 0시부터 현재까지의 실제 온도 데이터 확보
+  - Daily API를 통한 일별 최저/최고 기온 제공
+  - Hourly API를 통한 시간대별 상세 예보
+  - 호출 제한 없음
 
-### 2. OpenWeatherMap API 선택
-
-- **선택 이유**: 공공데이터포털 대비 더 간단한 인증 및 사용법
-- **장점**:
-  - 명확한 API 문서
-  - Geocoding API를 통한 한글 지역명 → 좌표 변환
-  - 무료 티어로 충분한 API 호출량 제공
-
-### 3. Next.js App Router
+### 2. Next.js App Router
 
 - **선택 이유**: 최신 Next.js 기능 활용 및 서버 컴포넌트 지원
 - **장점**:
@@ -100,7 +89,7 @@ pnpm dev
   - 파일 기반 라우팅으로 직관적인 구조
   - 내장 최적화 기능 (이미지, 폰트 등)
 
-### 4. Tailwind CSS + shadcn/ui
+### 3. Tailwind CSS + shadcn/ui
 
 - **선택 이유**: 빠른 개발과 일관된 디자인 시스템
 - **장점**:
@@ -108,7 +97,7 @@ pnpm dev
   - shadcn/ui의 접근성 높은 컴포넌트
   - 반응형 디자인 구현 용이
 
-### 5. localStorage를 통한 즐겨찾기 저장
+### 4. localStorage를 통한 즐겨찾기 저장
 
 - **선택 이유**: 서버 없이 간단한 데이터 영속성 확보
 - **장점**:

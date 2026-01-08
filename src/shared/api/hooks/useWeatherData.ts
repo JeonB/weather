@@ -24,7 +24,7 @@ export function useWeatherData(
       if (!coordinates) {
         throw new Error("좌표가 제공되지 않았습니다");
       }
-      return getWeatherData(coordinates);
+      return getWeatherData(coordinates, options?.locationName);
     },
     enabled: options?.enabled !== false && coordinates !== null,
     staleTime: 5 * 60 * 1000, // 5분

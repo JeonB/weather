@@ -68,7 +68,9 @@ export default function HomePage() {
           {geoLoading ? (
             <div className="text-center py-8">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <p className="mt-2 text-muted-foreground">현재 위치를 확인하는 중...</p>
+              <p className="mt-2 text-muted-foreground">
+                현재 위치를 확인하는 중...
+              </p>
             </div>
           ) : geoError && !geoCoordinates ? (
             <div className="text-center py-8">

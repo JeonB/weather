@@ -1,63 +1,45 @@
 import { z } from "zod";
 import {
-  CurrentWeatherResponseSchema,
-  ForecastResponseSchema,
+  OpenMeteoResponseSchema,
+  type OpenMeteoResponse,
+} from "./schemas/open-meteo.schemas";
+import {
   WeatherDataSchema,
-  type CurrentWeatherResponse,
-  type ForecastResponse,
   type WeatherData,
   type HourlyForecast,
   type Coordinates,
 } from "./schemas/weather.schemas";
+import {
+  mapWeatherCodeToIcon,
+  mapWeatherCodeToDescription,
+} from "@shared/utils/weather-code-mapper";
 
-const API_BASE_URL = "https://api.openweathermap.org/data/2.5";
-const API_KEY = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY;
+const API_BASE_URL = "https://api.open-meteo.com/v1/forecast";
 
-// 전역 API 호출 카운터 및 throttle 관리
-let apiCallCount = 0;
-let apiCallWindowStart = Date.now();
-const API_CALL_LIMIT = 50; // 1분에 50회로 제한 (안전 마진)
-const API_WINDOW_MS = 60000; // 1분
-
-async function fetchWeatherAPI<T>(
-  endpoint: string,
-  params: Record<string, string>,
-  schema?: z.ZodSchema<T>
-): Promise<T> {
-  // Rate limiting 체크
-  const now = Date.now();
-  if (now - apiCallWindowStart > API_WINDOW_MS) {
-    // 새로운 윈도우 시작
-    apiCallCount = 0;
-    apiCallWindowStart = now;
-  }
-
-  if (apiCallCount >= API_CALL_LIMIT) {
-    throw new Error("API 호출 한도를 초과했습니다. 잠시 후 다시 시도해주세요.");
-  }
-
-  apiCallCount++;
-
-  if (!API_KEY) {
-    throw new Error("OpenWeatherMap API 키가 설정되지 않았습니다.");
-  }
-
-  const searchParams = new URLSearchParams({
-    ...params,
-    appid: API_KEY,
-    units: "metric",
-    lang: "kr",
+/**
+ * Open-Meteo API 호출
+ * @param lat 위도
+ * @param lon 경도
+ * @returns Open-Meteo API 응답
+ */
+async function fetchOpenMeteoAPI(
+  lat: number,
+  lon: number
+): Promise<OpenMeteoResponse> {
+  const params = new URLSearchParams({
+    latitude: lat.toString(),
+    longitude: lon.toString(),
+    hourly: "temperature_2m,weathercode,relativehumidity_2m,windspeed_10m",
+    daily: "temperature_2m_max,temperature_2m_min",
+    timezone: "auto",
+    past_days: "1", // 어제부터 데이터 확보 (오늘 0시 이후 포함)
   });
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}?${searchParams}`);
+  const response = await fetch(`${API_BASE_URL}?${params}`);
 
   if (!response.ok) {
     if (response.status === 404) {
-      throw new Error("해당 장소의 정보가 제공되지 않습니다.");
-    }
-    if (response.status === 429) {
-      // 429 에러 시 카운터를 최대로 설정하여 추가 호출 방지
-      apiCallCount = API_CALL_LIMIT;
+      throw new Error("해당 장소의 날씨 정보를 찾을 수 없습니다.");
     }
     throw new Error(
       `날씨 정보를 가져오는데 실패했습니다. (${response.status})`
@@ -66,107 +48,148 @@ async function fetchWeatherAPI<T>(
 
   const data = await response.json();
 
-  // 스키마가 제공된 경우 검증
-  if (schema) {
-    try {
-      return schema.parse(data);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        throw new Error(
-          `API 응답 형식이 올바르지 않습니다: ${error.issues
-            .map((issue) => issue.message)
-            .join(", ")}`
-        );
-      }
-      throw error;
+  // 스키마 검증
+  try {
+    return OpenMeteoResponseSchema.parse(data);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw new Error(
+        `API 응답 형식이 올바르지 않습니다: ${error.issues
+          .map((issue) => issue.message)
+          .join(", ")}`
+      );
+    }
+    throw error;
+  }
+}
+
+/**
+ * 시간대별 예보 데이터 포맷
+ * @param data Open-Meteo API 응답
+ * @returns 시간대별 예보 배열
+ */
+function formatHourlyForecast(data: OpenMeteoResponse): HourlyForecast[] {
+  const now = new Date();
+
+  // 현재 시각 이후의 항목만 필터링
+  const futureHours = data.hourly.time
+    .map((time, index) => {
+      const itemDate = new Date(time);
+      return {
+        time: itemDate,
+        temp: data.hourly.temperature_2m[index],
+        weathercode: data.hourly.weathercode[index],
+      };
+    })
+    .filter((item) => item.time >= now)
+    .slice(0, 8); // 8개 슬롯
+
+  // 야간 여부 판단 (18시~6시)
+  const isNight = (date: Date) => {
+    const hour = date.getHours();
+    return hour >= 18 || hour < 6;
+  };
+
+  return futureHours.map((item) => ({
+    time: item.time.toLocaleTimeString("ko-KR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }),
+    temp: Math.round(item.temp),
+    icon: mapWeatherCodeToIcon(item.weathercode, isNight(item.time)),
+    description: mapWeatherCodeToDescription(item.weathercode),
+  }));
+}
+
+/**
+ * 날씨 데이터 조회
+ * @param coordinates 좌표
+ * @param locationName 위치 이름 (선택사항, Open-Meteo는 위치 이름을 제공하지 않음)
+ * @returns 날씨 데이터
+ */
+export async function getWeatherData(
+  coordinates: Coordinates,
+  locationName?: string
+): Promise<WeatherData> {
+  const data = await fetchOpenMeteoAPI(coordinates.lat, coordinates.lon);
+
+  const now = new Date();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // 1. 오늘 날짜의 최저/최고 기온 (Daily 데이터 우선)
+  const todayDateString = today.toISOString().split("T")[0];
+  const todayIndex = data.daily.time.findIndex((t) => t === todayDateString);
+
+  let tempMin: number;
+  let tempMax: number;
+
+  if (todayIndex !== -1) {
+    // Daily 데이터에서 오늘 날짜의 최저/최고 기온 사용
+    tempMin = data.daily.temperature_2m_min[todayIndex];
+    tempMax = data.daily.temperature_2m_max[todayIndex];
+  } else {
+    // Daily 데이터가 없는 경우 Hourly 데이터에서 계산
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const todayHourlyTemps = data.hourly.time
+      .map((time, index) => ({
+        time: new Date(time),
+        temp: data.hourly.temperature_2m[index],
+      }))
+      .filter((item) => item.time >= today && item.time < tomorrow)
+      .map((item) => item.temp);
+
+    if (todayHourlyTemps.length > 0) {
+      tempMin = Math.min(...todayHourlyTemps);
+      tempMax = Math.max(...todayHourlyTemps);
+    } else {
+      // Fallback: 현재 온도 사용
+      const currentIndex = data.hourly.time.findIndex(
+        (t) => new Date(t) >= now
+      );
+      const currentTemp = data.hourly.temperature_2m[currentIndex] || 0;
+      tempMin = currentTemp;
+      tempMax = currentTemp;
     }
   }
 
-  return data;
-}
+  // 2. 현재 날씨 정보
+  const currentIndex = data.hourly.time.findIndex((t) => new Date(t) >= now);
+  const currentTemp = data.hourly.temperature_2m[currentIndex] || 0;
+  const currentWeatherCode = data.hourly.weathercode[currentIndex] || 0;
+  const currentHumidity = data.hourly.relativehumidity_2m[currentIndex] || 0;
+  const currentWindSpeed = data.hourly.windspeed_10m[currentIndex] || 0;
 
-export async function getCurrentWeatherByCoords(
-  lat: number,
-  lon: number
-): Promise<CurrentWeatherResponse> {
-  return fetchWeatherAPI<CurrentWeatherResponse>(
-    "/weather",
-    {
-      lat: lat.toString(),
-      lon: lon.toString(),
-    },
+  // 야간 여부 판단
+  const currentHour = now.getHours();
+  const isCurrentNight = currentHour >= 18 || currentHour < 6;
 
-    CurrentWeatherResponseSchema
-  );
-}
+  // 3. 시간대별 예보
+  const hourlyForecast = formatHourlyForecast(data);
 
-export async function getForecastByCoords(
-  lat: number,
-  lon: number
-): Promise<ForecastResponse> {
-  return fetchWeatherAPI<ForecastResponse>(
-    "/forecast",
-    {
-      lat: lat.toString(),
-      lon: lon.toString(),
-    },
-    ForecastResponseSchema
-  );
-}
+  // 4. location name은 외부에서 제공받거나 좌표로 표시
+  const finalLocationName =
+    locationName ||
+    `${coordinates.lat.toFixed(2)}, ${coordinates.lon.toFixed(2)}`;
 
-function formatHourlyForecast(
-  forecastResponse: ForecastResponse
-): HourlyForecast[] {
-  const now = new Date();
-  // 현재 시각 이후의 항목만 필터링
-  const futureItems = forecastResponse.list.filter(
-    (item) => item.dt * 1000 >= now.getTime()
-  );
-
-  // 3시간 간격 8개 슬롯 선택 (현재 포함, 다음날 포함 가능)
-  const slots = futureItems.slice(0, 8);
-
-  return slots.map<HourlyForecast>((item) => {
-    const itemDate = new Date(item.dt * 1000);
-    return {
-      time: itemDate.toLocaleTimeString("ko-KR", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      }),
-      temp: Math.round(item.main.temp),
-      icon: item.weather[0]?.icon || "01d",
-      description: item.weather[0]?.description || "",
-    };
-  });
-}
-
-export async function getWeatherData(
-  coordinates: Coordinates
-): Promise<WeatherData> {
-  const [currentWeather, forecast] = await Promise.all([
-    getCurrentWeatherByCoords(coordinates.lat, coordinates.lon),
-    getForecastByCoords(coordinates.lat, coordinates.lon),
-  ]);
-
-  // 24시간 예보 데이터 생성
-  const hourlyForecast = formatHourlyForecast(forecast);
-
-  const weatherData = {
-    location: currentWeather.name,
+  const weatherData: WeatherData = {
+    location: finalLocationName,
     coordinates: {
-      lat: currentWeather.coord.lat,
-      lon: currentWeather.coord.lon,
+      lat: data.latitude,
+      lon: data.longitude,
     },
     current: {
-      temp: Math.round(currentWeather.main.temp),
-      feelsLike: Math.round(currentWeather.main.feels_like),
-      tempMin: Math.round(currentWeather.main.temp_min),
-      tempMax: Math.round(currentWeather.main.temp_max),
-      humidity: currentWeather.main.humidity,
-      description: currentWeather.weather[0]?.description || "",
-      icon: currentWeather.weather[0]?.icon || "01d",
-      windSpeed: currentWeather.wind.speed,
+      temp: Math.round(currentTemp),
+      feelsLike: Math.round(currentTemp), // Open-Meteo는 체감온도 미제공
+      tempMin: Math.round(tempMin),
+      tempMax: Math.round(tempMax),
+      humidity: Math.round(currentHumidity),
+      description: mapWeatherCodeToDescription(currentWeatherCode),
+      icon: mapWeatherCodeToIcon(currentWeatherCode, isCurrentNight),
+      windSpeed: currentWindSpeed,
     },
     hourlyForecast,
   };

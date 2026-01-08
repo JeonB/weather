@@ -28,7 +28,7 @@ export default function WeatherDisplay({
     data: weather,
     isPending: isLoading,
     error: queryError,
-  } = useWeatherData(coordinates);
+  } = useWeatherData(coordinates, { locationName });
 
   const {
     addToFavorites,

@@ -1,6 +1,7 @@
 "use client";
 
 import type { HourlyForecast as HourlyForecastType } from "@shared/api/weather.types";
+import WeatherIcon from "@shared/ui/WeatherIcon";
 import { cn } from "@shared/lib/cn";
 
 interface HourlyForecastProps {
@@ -54,7 +55,40 @@ export default function HourlyForecast({
       <h3 className="mb-4 text-sm font-medium text-foreground">
         시간대별 기온
       </h3>
-      <div className="relative w-full overflow-x-auto">
+
+      {/* 모바일: 컴팩트한 세로형 레이아웃 */}
+      <div className="md:hidden space-y-3">
+        {forecasts.map((forecast, index) => {
+          return (
+            <div
+              key={`${forecast.time}-${index}`}
+              className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/50"
+            >
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <span className="text-sm font-medium text-foreground whitespace-nowrap">
+                  {forecast.time}
+                </span>
+                <WeatherIcon
+                  iconCode={forecast.icon}
+                  size={32}
+                  className="shrink-0"
+                />
+                <span className="text-xs text-muted-foreground truncate">
+                  {forecast.description}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-lg font-semibold text-foreground">
+                  {forecast.temp}°
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 데스크톱: 기존 SVG 그래프 */}
+      <div className="hidden md:block relative w-full overflow-x-auto">
         <svg
           width={chartWidth}
           height={graphHeight + padding * 2}
