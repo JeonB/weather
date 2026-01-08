@@ -84,12 +84,10 @@ export default function WeatherDisplay({
               </div>
             </div>
             <Skeleton className="h-4 w-40" />
-            <div className="w-full mt-4">
-              <Skeleton className="h-4 w-32 mb-3" />
-              <div className="flex gap-4">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <Skeleton key={i} className="h-24 w-16" />
-                ))}
+            <div className="w-full mt-4 border-t pt-6">
+              <Skeleton className="h-4 w-32 mb-4" />
+              <div className="relative w-full">
+                <Skeleton className="h-74 w-full rounded-md" />
               </div>
             </div>
           </div>

@@ -172,6 +172,20 @@ export async function getWeatherData(
     getForecastByCoords(coordinates.lat, coordinates.lon),
   ]);
 
+  // 24시간 예보 데이터 생성
+  const hourlyForecast = formatHourlyForecast(forecast);
+
+  // 24시간 예보에서 실제 최저/최고 기온 계산
+  const forecastTemps = hourlyForecast.map((f) => f.temp);
+  const actualTempMin =
+    forecastTemps.length > 0
+      ? Math.min(...forecastTemps)
+      : Math.round(currentWeather.main.temp_min);
+  const actualTempMax =
+    forecastTemps.length > 0
+      ? Math.max(...forecastTemps)
+      : Math.round(currentWeather.main.temp_max);
+
   const weatherData = {
     location: currentWeather.name,
     coordinates: {
@@ -181,14 +195,14 @@ export async function getWeatherData(
     current: {
       temp: Math.round(currentWeather.main.temp),
       feelsLike: Math.round(currentWeather.main.feels_like),
-      tempMin: Math.round(currentWeather.main.temp_min),
-      tempMax: Math.round(currentWeather.main.temp_max),
+      tempMin: actualTempMin,
+      tempMax: actualTempMax,
       humidity: currentWeather.main.humidity,
       description: currentWeather.weather[0]?.description || "",
       icon: currentWeather.weather[0]?.icon || "01d",
       windSpeed: currentWeather.wind.speed,
     },
-    hourlyForecast: formatHourlyForecast(forecast),
+    hourlyForecast,
   };
 
   // 최종 데이터 검증

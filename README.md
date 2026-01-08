@@ -24,8 +24,6 @@ NEXT_PUBLIC_OPENWEATHER_API_KEY=your_api_key_here
 pnpm dev
 ```
 
-브라우저에서 [http://localhost:3000](http://localhost:3000)을 열어 확인할 수 있습니다.
-
 ## 구현한 기능
 
 ### 1. 현재 위치 기반 날씨 조회

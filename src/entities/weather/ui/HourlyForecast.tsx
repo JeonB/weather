@@ -38,31 +38,16 @@ export default function HourlyForecast({
     return graphHeight - normalized * graphHeight;
   };
 
-  // 부드러운 베지어 커브를 위한 경로 생성
-  const points = forecasts.map((f, index) => {
-    const x =
-      padding +
-      (index * (chartWidth - padding * 2)) / (forecasts.length - 1 || 1);
-    const y = padding + getYPosition(f.temp);
-    return { x, y };
-  });
-
-  function createSmoothPath(pts: { x: number; y: number }[]): string {
-    if (pts.length === 0) return "";
-    if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`;
-    let d = `M ${pts[0].x} ${pts[0].y}`;
-    for (let i = 1; i < pts.length; i += 1) {
-      const p0 = pts[i - 1];
-      const p1 = pts[i];
-      const dx = (p1.x - p0.x) / 2;
-      const c1 = { x: p0.x + dx, y: p0.y };
-      const c2 = { x: p1.x - dx, y: p1.y };
-      d += ` C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${p1.x} ${p1.y}`;
-    }
-    return d;
-  }
-
-  const pathData = createSmoothPath(points);
+  // 직선 경로 생성
+  const pathData = forecasts
+    .map((forecast, index) => {
+      const x =
+        padding +
+        (index * (chartWidth - padding * 2)) / (forecasts.length - 1 || 1);
+      const y = padding + getYPosition(forecast.temp);
+      return `${index === 0 ? "M" : "L"} ${x} ${y}`;
+    })
+    .join(" ");
 
   return (
     <div className={cn("w-full", className)}>
