@@ -95,18 +95,7 @@ export async function getCurrentWeatherByCoords(
       lat: lat.toString(),
       lon: lon.toString(),
     },
-    CurrentWeatherResponseSchema
-  );
-}
 
-export async function getCurrentWeatherByCity(
-  cityName: string
-): Promise<CurrentWeatherResponse> {
-  return fetchWeatherAPI<CurrentWeatherResponse>(
-    "/weather",
-    {
-      q: cityName,
-    },
     CurrentWeatherResponseSchema
   );
 }
@@ -120,18 +109,6 @@ export async function getForecastByCoords(
     {
       lat: lat.toString(),
       lon: lon.toString(),
-    },
-    ForecastResponseSchema
-  );
-}
-
-export async function getForecastByCity(
-  cityName: string
-): Promise<ForecastResponse> {
-  return fetchWeatherAPI<ForecastResponse>(
-    "/forecast",
-    {
-      q: cityName,
     },
     ForecastResponseSchema
   );
@@ -175,17 +152,6 @@ export async function getWeatherData(
   // 24시간 예보 데이터 생성
   const hourlyForecast = formatHourlyForecast(forecast);
 
-  // 24시간 예보에서 실제 최저/최고 기온 계산
-  const forecastTemps = hourlyForecast.map((f) => f.temp);
-  const actualTempMin =
-    forecastTemps.length > 0
-      ? Math.min(...forecastTemps)
-      : Math.round(currentWeather.main.temp_min);
-  const actualTempMax =
-    forecastTemps.length > 0
-      ? Math.max(...forecastTemps)
-      : Math.round(currentWeather.main.temp_max);
-
   const weatherData = {
     location: currentWeather.name,
     coordinates: {
@@ -195,8 +161,8 @@ export async function getWeatherData(
     current: {
       temp: Math.round(currentWeather.main.temp),
       feelsLike: Math.round(currentWeather.main.feels_like),
-      tempMin: actualTempMin,
-      tempMax: actualTempMax,
+      tempMin: Math.round(currentWeather.main.temp_min),
+      tempMax: Math.round(currentWeather.main.temp_max),
       humidity: currentWeather.main.humidity,
       description: currentWeather.weather[0]?.description || "",
       icon: currentWeather.weather[0]?.icon || "01d",
@@ -207,31 +173,4 @@ export async function getWeatherData(
 
   // 최종 데이터 검증
   return WeatherDataSchema.parse(weatherData);
-}
-
-export async function getWeatherDataByLocationName(
-  locationName: string
-): Promise<WeatherData> {
-  // 한국 지역명을 영문 또는 좌표로 변환하여 검색
-  // OpenWeatherMap은 한글 도시명 검색이 제한적이므로 Geocoding API 사용
-  const geocodingUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(
-    locationName
-  )},KR&limit=1&appid=${API_KEY}`;
-
-  const geoResponse = await fetch(geocodingUrl);
-  if (!geoResponse.ok) {
-    throw new Error("해당 장소의 정보가 제공되지 않습니다.");
-  }
-
-  const geoData = await geoResponse.json();
-  if (!geoData || geoData.length === 0) {
-    throw new Error("해당 장소의 정보가 제공되지 않습니다.");
-  }
-
-  const { lat, lon } = geoData[0];
-  return getWeatherData({ lat, lon });
-}
-
-export function getWeatherIconUrl(iconCode: string): string {
-  return `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
 }

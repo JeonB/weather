@@ -29,8 +29,6 @@ export default function WeatherIcon({
   const iconType = iconCode.slice(0, 2);
   const isNight = iconCode.endsWith("n");
 
-  const iconClass = cn("text-foreground", className);
-
   // 조건별 컬러 매핑 (stroke 색)
   const color =
     iconType === "01"
@@ -164,4 +162,3 @@ export default function WeatherIcon({
       );
   }
 }
-

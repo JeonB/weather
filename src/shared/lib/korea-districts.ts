@@ -82,7 +82,3 @@ export function getLocationForWeatherSearch(location: ParsedLocation): string {
   }
   return `${location.city}, KR`;
 }
-
-export function getAllLocations(): ParsedLocation[] {
-  return koreaDistricts.map(parseLocationName);
-}

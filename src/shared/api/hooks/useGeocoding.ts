@@ -38,7 +38,6 @@ export function useGeocoding(
       }
 
       const data = await response.json();
-
       // Zod 스키마로 검증
       try {
         const validatedData = GeocodingResponseSchema.parse(data);
@@ -59,6 +58,6 @@ export function useGeocoding(
       options?.enabled !== false &&
       locationName !== null &&
       locationName.trim() !== "",
-    staleTime: 10 * 60 * 1000, // 10분 (좌표는 자주 변하지 않음)
+    staleTime: 60 * 60 * 1000,
   });
 }

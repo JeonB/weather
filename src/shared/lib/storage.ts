@@ -116,23 +116,6 @@ export function updateFavoriteCoordinates(
   return true;
 }
 
-export function isFavorite(fullName: string): boolean {
-  const favorites = getFavorites();
-  return favorites.some((f) => f.fullName === fullName);
-}
-
-export function getFavoriteById(id: string): FavoriteLocation | null {
-  const favorites = getFavorites();
-  return favorites.find((f) => f.id === id) || null;
-}
-
-export function getFavoriteByFullName(
-  fullName: string
-): FavoriteLocation | null {
-  const favorites = getFavorites();
-  return favorites.find((f) => f.fullName === fullName) || null;
-}
-
 export function canAddMoreFavorites(): boolean {
   return getFavorites().length < MAX_FAVORITES;
 }
