@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { z } from "zod";
 import {
   GeocodingResponseSchema,
   CoordinatesSchema,
@@ -49,10 +48,10 @@ export function useGeocoding(
         };
         // 좌표도 검증
         return CoordinatesSchema.parse(coordinates);
-      } catch (error) {
-        if (error instanceof z.ZodError) {
-          throw new Error("위치 정보 형식이 올바르지 않습니다");
-        }
+      } catch {
+        // if (error instanceof z.ZodError) {
+        //   throw new Error("위치 정보 형식이 올바르지 않습니다");
+        // }
         throw new Error("해당 장소의 정보가 제공되지 않습니다.");
       }
     },
