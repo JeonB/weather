@@ -79,6 +79,7 @@ export default function FavoritesList({ className }: FavoritesListProps) {
                 favorite={favorite}
                 onRemove={removeFromFavorites}
                 onUpdateAlias={updateAlias}
+                className="flex flex-col justify-center"
               />
             </motion.div>
           ))}

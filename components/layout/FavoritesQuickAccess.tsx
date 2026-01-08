@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore, useState } from "react";
+import { useLayoutEffect, useState, startTransition } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -9,18 +9,17 @@ import { cn } from "@shared/lib/cn";
 
 export default function FavoritesQuickAccess() {
   const { favorites } = useFavorites();
-  const isHydrated = useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false
-  );
+  const [isMounted, setIsMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
-  if (!isHydrated) {
-    return null;
-  }
+  // 하이드레이션 안전성을 위해 mounted 상태 확인
+  useLayoutEffect(() => {
+    startTransition(() => {
+      setIsMounted(true);
+    });
+  }, []);
 
-  if (favorites.length === 0) {
+  if (!isMounted || favorites.length === 0) {
     return null;
   }
 

@@ -33,6 +33,12 @@ export function saveFavorites(favorites: FavoriteLocation[]): void {
 
   try {
     localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+    // 동일 탭에서도 변경 사항을 즉시 반영하기 위한 커스텀 이벤트 발행
+    try {
+      window.dispatchEvent(new CustomEvent("favorites-changed"));
+    } catch {
+      // noop
+    }
   } catch (error) {
     console.error("Failed to save favorites:", error);
   }

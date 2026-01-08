@@ -9,8 +9,10 @@ export default function HomePage() {
       <div className="container mx-auto px-4 py-6 sm:py-8 max-w-4xl">
         <HomeHeader />
         <SearchSection />
-        <CurrentLocationWeather />
-        <FavoritesSection />
+        <div className="space-y-5">
+          <CurrentLocationWeather />
+          <FavoritesSection />
+        </div>
       </div>
     </div>
   );

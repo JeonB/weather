@@ -50,14 +50,14 @@ function EditFavoriteDialogInner({
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">원래 이름</label>
+            <label className="text-sm text-muted-foreground">지역명</label>
             <p className="text-sm font-medium">{favorite.displayName}</p>
           </div>
 
           <div className="space-y-2">
             <label
               htmlFor="alias-input"
-              className="text-sm text-muted-foreground"
+              className="text-sm text-muted-foreground block"
             >
               별칭 (선택사항)
             </label>
@@ -69,13 +69,10 @@ function EditFavoriteDialogInner({
               placeholder="별칭을 입력하세요"
               maxLength={20}
             />
-            <p className="text-xs text-muted-foreground">
-              별칭을 설정하면 카드에 원래 이름 대신 별칭이 표시됩니다
-            </p>
           </div>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="gap-2">
           <Button variant="outline" onClick={handleReset}>
             원래대로
           </Button>

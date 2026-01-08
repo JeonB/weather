@@ -1,8 +1,5 @@
 "use client";
 
-import Image from "next/image";
-import { getWeatherIconUrl } from "@shared/api/weather";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import type { HourlyForecast as HourlyForecastType } from "@shared/api/weather.types";
 import { cn } from "@shared/lib/cn";
 
@@ -23,33 +20,155 @@ export default function HourlyForecast({
     );
   }
 
+  // 그래프를 위한 최소/최대 온도 계산
+  const temps = forecasts.map((f) => f.temp);
+  const minTemp = Math.min(...temps);
+  const maxTemp = Math.max(...temps);
+  const tempRange = maxTemp - minTemp || 1; // 0으로 나누는 것 방지
+
+  // 그래프 영역 설정 (여백 확대)
+  const graphHeight = 220;
+  const graphWidth = forecasts.length * 100;
+  const padding = 60;
+  const chartWidth = Math.max(graphWidth, 600);
+
+  // 온도를 그래프 좌표로 변환
+  const getYPosition = (temp: number) => {
+    const normalized = (temp - minTemp) / tempRange;
+    return graphHeight - normalized * graphHeight;
+  };
+
+  // 부드러운 베지어 커브를 위한 경로 생성
+  const points = forecasts.map((f, index) => {
+    const x =
+      padding +
+      (index * (chartWidth - padding * 2)) / (forecasts.length - 1 || 1);
+    const y = padding + getYPosition(f.temp);
+    return { x, y };
+  });
+
+  function createSmoothPath(pts: { x: number; y: number }[]): string {
+    if (pts.length === 0) return "";
+    if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`;
+    let d = `M ${pts[0].x} ${pts[0].y}`;
+    for (let i = 1; i < pts.length; i += 1) {
+      const p0 = pts[i - 1];
+      const p1 = pts[i];
+      const dx = (p1.x - p0.x) / 2;
+      const c1 = { x: p0.x + dx, y: p0.y };
+      const c2 = { x: p1.x - dx, y: p1.y };
+      d += ` C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${p1.x} ${p1.y}`;
+    }
+    return d;
+  }
+
+  const pathData = createSmoothPath(points);
+
   return (
     <div className={cn("w-full", className)}>
-      <h3 className="mb-3 text-sm font-medium text-muted-foreground">
-        오늘의 시간대별 날씨
+      <h3 className="mb-4 text-sm font-medium text-foreground">
+        시간대별 기온
       </h3>
-      <ScrollArea className="w-full whitespace-nowrap">
-        <div className="flex gap-4 pb-4">
-          {forecasts.map((forecast, index) => (
-            <div
-              key={`${forecast.time}-${index}`}
-              className="flex flex-col items-center gap-1 rounded-lg bg-muted/50 p-3 min-w-[70px]"
+      <div className="relative w-full overflow-x-auto">
+        <svg
+          width={chartWidth}
+          height={graphHeight + padding * 2}
+          className="w-full"
+          viewBox={`0 0 ${chartWidth} ${graphHeight + padding * 2}`}
+        >
+          {/* 그리드 라인 (더 연한 색상) */}
+          <defs>
+            <pattern
+              id="grid"
+              width="100"
+              height="50"
+              patternUnits="userSpaceOnUse"
             >
-              <span className="text-xs text-muted-foreground">
-                {forecast.time}
-              </span>
-              <Image
-                src={getWeatherIconUrl(forecast.icon)}
-                alt={forecast.description}
-                width={40}
-                height={40}
+              <path
+                d="M 100 0 L 0 0 0 50"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="0.5"
+                className="text-muted/30"
               />
-              <span className="text-sm font-medium">{forecast.temp}°</span>
-            </div>
-          ))}
-        </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+            </pattern>
+          </defs>
+          <rect
+            width={chartWidth}
+            height={graphHeight + padding * 2}
+            fill="url(#grid)"
+          />
+
+          {/* 온도 라인 */}
+          <path
+            d={pathData}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            className="text-primary"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+
+          {/* 온도 점 및 라벨 */}
+          {forecasts.map((forecast, index) => {
+            const x =
+              padding +
+              (index * (chartWidth - padding * 2)) /
+                (forecasts.length - 1 || 1);
+            const y = padding + getYPosition(forecast.temp);
+
+            return (
+              <g key={`${forecast.time}-${index}`}>
+                {/* 온도 점 */}
+                <circle
+                  cx={x}
+                  cy={y}
+                  r="5"
+                  fill="currentColor"
+                  className="text-primary"
+                />
+
+                {/* 온도 라벨 (간격 확대) */}
+                <text
+                  x={x}
+                  y={y - 16}
+                  textAnchor="middle"
+                  className="text-xs font-medium fill-foreground"
+                >
+                  {forecast.temp}°
+                </text>
+
+                {/* 시간 라벨 (간격 확대) */}
+                <text
+                  x={x}
+                  y={graphHeight + padding + 28}
+                  textAnchor="middle"
+                  className="text-xs fill-muted-foreground"
+                >
+                  {forecast.time}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Y축 최소/최대 온도 라벨 */}
+          <text
+            x={10}
+            y={padding + 5}
+            className="text-xs fill-muted-foreground"
+          >
+            {maxTemp}°
+          </text>
+          <text
+            x={10}
+            y={graphHeight + padding - 5}
+            className="text-xs fill-muted-foreground"
+          >
+            {minTemp}°
+          </text>
+        </svg>
+      </div>
     </div>
   );
 }

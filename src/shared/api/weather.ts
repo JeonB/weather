@@ -141,52 +141,27 @@ function formatHourlyForecast(
   forecastResponse: ForecastResponse
 ): HourlyForecast[] {
   const now = new Date();
-  const today = new Date(now);
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  // 현재 시각 이후의 항목만 필터링
+  const futureItems = forecastResponse.list.filter(
+    (item) => item.dt * 1000 >= now.getTime()
+  );
 
-  // 오늘 0시부터 24시까지의 데이터만 필터링
-  const todayItems = forecastResponse.list.filter((item) => {
+  // 3시간 간격 8개 슬롯 선택 (현재 포함, 다음날 포함 가능)
+  const slots = futureItems.slice(0, 8);
+
+  return slots.map<HourlyForecast>((item) => {
     const itemDate = new Date(item.dt * 1000);
-    return itemDate >= today && itemDate < tomorrow;
+    return {
+      time: itemDate.toLocaleTimeString("ko-KR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }),
+      temp: Math.round(item.main.temp),
+      icon: item.weather[0]?.icon || "01d",
+      description: item.weather[0]?.description || "",
+    };
   });
-
-  // 0시, 3시, 6시, 9시, 12시, 15시, 18시, 21시만 추출 (3시간 간격)
-  const hourlySlots = [0, 3, 6, 9, 12, 15, 18, 21];
-  const result: HourlyForecast[] = [];
-
-  for (const hour of hourlySlots) {
-    const targetTime = new Date(today);
-    targetTime.setHours(hour, 0, 0, 0);
-
-    // 해당 시간에 가장 가까운 항목 찾기 (30분 이내)
-    const closest = todayItems.reduce((prev, curr) => {
-      const currTime = new Date(curr.dt * 1000);
-      const prevDiff = Math.abs(prev.dt * 1000 - targetTime.getTime());
-      const currDiff = Math.abs(currTime.getTime() - targetTime.getTime());
-      return currDiff < prevDiff && currDiff <= 30 * 60 * 1000 ? curr : prev;
-    }, todayItems[0]);
-
-    if (closest) {
-      const itemTime = new Date(closest.dt * 1000);
-      const diff = Math.abs(itemTime.getTime() - targetTime.getTime());
-      if (diff <= 30 * 60 * 1000) {
-        result.push({
-          time: targetTime.toLocaleTimeString("ko-KR", {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false,
-          }),
-          temp: Math.round(closest.main.temp),
-          icon: closest.weather[0]?.icon || "01d",
-          description: closest.weather[0]?.description || "",
-        });
-      }
-    }
-  }
-
-  return result;
 }
 
 export async function getWeatherData(

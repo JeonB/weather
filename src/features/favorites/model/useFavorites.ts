@@ -55,8 +55,23 @@ export function useFavorites(): UseFavoritesReturn {
       }
     }
 
+    // 동일 탭 내 변경 감지 (커스텀 이벤트)
+    function handleCustomChange() {
+      loadFavorites();
+    }
+
     window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
+    window.addEventListener(
+      "favorites-changed",
+      handleCustomChange as EventListener
+    );
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener(
+        "favorites-changed",
+        handleCustomChange as EventListener
+      );
+    };
   }, [loadFavorites]);
 
   const refresh = useCallback(() => {

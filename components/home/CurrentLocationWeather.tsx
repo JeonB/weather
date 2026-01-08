@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import { WeatherDisplay } from "@widgets/weather-display";
 import { useGeolocation } from "@features/geolocation";
+import { useReverseGeocoding } from "@shared/api/hooks/useReverseGeocoding";
 
 export default function CurrentLocationWeather() {
   const {
@@ -10,6 +11,11 @@ export default function CurrentLocationWeather() {
     isLoading: geoLoading,
     error: geoError,
   } = useGeolocation();
+
+  // 좌표에서 한글 위치명 가져오기
+  const { data: locationName } = useReverseGeocoding(geoCoordinates, {
+    enabled: !!geoCoordinates && !geoLoading,
+  });
 
   if (geoLoading) {
     return (
@@ -41,7 +47,11 @@ export default function CurrentLocationWeather() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.2 }}
     >
-      <WeatherDisplay coordinates={geoCoordinates} showFavoriteButton={false} />
+      <WeatherDisplay
+        coordinates={geoCoordinates}
+        locationName={locationName || undefined}
+        showFavoriteButton={false}
+      />
     </motion.section>
   );
 }

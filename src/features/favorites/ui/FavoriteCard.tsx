@@ -2,13 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { motion } from "motion/react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@shared/lib/cn";
-import { getWeatherIconUrl } from "@shared/api/weather";
+import WeatherIcon from "@shared/ui/WeatherIcon";
 import { useWeatherData } from "@shared/api/hooks/useWeatherData";
 import type { FavoriteLocation } from "@shared/lib/storage";
 import { EditFavoriteDialog } from "./EditFavoriteDialog";
@@ -78,17 +77,12 @@ export default function FavoriteCard({
             className="block cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg"
           >
             <CardContent className="p-4">
-              <div className="flex items-start justify-center mb-2">
+              <div className="flex items-start justify-center mb-3">
                 <div className="space-y-1 pr-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center">
                     <h3 className="font-semibold text-sm truncate">
                       {displayName}
                     </h3>
-                    {favorite.alias && favorite.alias.length > 0 && (
-                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-                        별칭
-                      </span>
-                    )}
                   </div>
                   {secondaryName && (
                     <p className="text-xs text-muted-foreground truncate">
@@ -107,14 +101,12 @@ export default function FavoriteCard({
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.1 }}
                 >
-                  <Image
-                    src={getWeatherIconUrl(weather.current.icon)}
-                    alt={weather.current.description}
-                    width={48}
-                    height={48}
+                  <WeatherIcon
+                    iconCode={weather.current.icon}
+                    size={48}
                     className="shrink-0"
                   />
-                  <div className="flex flex-col">
+                  <div className="flex flex-col gap-1">
                     <span className="text-2xl font-bold leading-tight">
                       {weather.current.temp}°
                     </span>
