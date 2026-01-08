@@ -123,7 +123,7 @@ export default function LocationSearchInput({
         onFocus={() => query.trim().length > 0 && setIsOpen(true)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className="w-full"
+        className="w-full bg-background/95 backdrop-blur-sm border-2 shadow-sm"
         autoComplete="off"
       />
 
