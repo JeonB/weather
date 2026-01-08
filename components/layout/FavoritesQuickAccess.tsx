@@ -123,7 +123,7 @@ export default function FavoritesQuickAccess() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10 opacity-100"
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
