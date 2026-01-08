@@ -1,11 +1,19 @@
 "use client";
 
-import { useRef, useEffect, useState, type KeyboardEvent } from "react";
+import {
+  useRef,
+  useEffect,
+  useState,
+  useMemo,
+  type KeyboardEvent,
+} from "react";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@shared/lib/cn";
-import { useLocationSearch } from "../model/useLocationSearch";
-import type { ParsedLocation } from "@shared/lib/korea-districts";
+import {
+  searchLocations,
+  type ParsedLocation,
+} from "@shared/lib/korea-districts";
 
 interface LocationSearchInputProps {
   onSelect: (location: ParsedLocation) => void;
@@ -20,11 +28,15 @@ export default function LocationSearchInput({
 }: LocationSearchInputProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [query, setQuery] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
-  const { query, setQuery, results, isOpen, setIsOpen, selectLocation } =
-    useLocationSearch(onSelect);
+  const results = useMemo(
+    () => (query.trim().length === 0 ? [] : searchLocations(query, 20)),
+    [query]
+  );
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
@@ -90,9 +102,10 @@ export default function LocationSearchInput({
   };
 
   const handleSelect = (location: ParsedLocation) => {
-    selectLocation(location);
-    setQuery("");
+    setQuery(location.displayName);
+    setIsOpen(false);
     setSelectedIndex(-1);
+    onSelect(location);
   };
 
   const handleMouseEnter = (index: number) => {

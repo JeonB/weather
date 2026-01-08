@@ -138,8 +138,7 @@ export async function getForecastByCity(
 }
 
 function formatHourlyForecast(
-  forecastResponse: ForecastResponse,
-  currentWeather: CurrentWeatherResponse
+  forecastResponse: ForecastResponse
 ): HourlyForecast[] {
   const now = new Date();
   const today = new Date(now);
@@ -147,13 +146,13 @@ function formatHourlyForecast(
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  // 오늘 0시부터 24시까지의 데이터 필터링
+  // 오늘 0시부터 24시까지의 데이터만 필터링
   const todayItems = forecastResponse.list.filter((item) => {
     const itemDate = new Date(item.dt * 1000);
     return itemDate >= today && itemDate < tomorrow;
   });
 
-  // 0시, 3시, 6시, 9시, 12시, 15시, 18시, 21시 (3시간 간격)
+  // 0시, 3시, 6시, 9시, 12시, 15시, 18시, 21시만 추출 (3시간 간격)
   const hourlySlots = [0, 3, 6, 9, 12, 15, 18, 21];
   const result: HourlyForecast[] = [];
 
@@ -161,34 +160,18 @@ function formatHourlyForecast(
     const targetTime = new Date(today);
     targetTime.setHours(hour, 0, 0, 0);
 
-    // 현재 시간보다 이전인지 확인
-    const isPast = targetTime < now;
+    // 해당 시간에 가장 가까운 항목 찾기 (30분 이내)
+    const closest = todayItems.reduce((prev, curr) => {
+      const currTime = new Date(curr.dt * 1000);
+      const prevDiff = Math.abs(prev.dt * 1000 - targetTime.getTime());
+      const currDiff = Math.abs(currTime.getTime() - targetTime.getTime());
+      return currDiff < prevDiff && currDiff <= 30 * 60 * 1000 ? curr : prev;
+    }, todayItems[0]);
 
-    if (isPast) {
-      // 과거 시간은 현재 날씨로 채움
-      result.push({
-        time: targetTime.toLocaleTimeString("ko-KR", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false,
-        }),
-        temp: Math.round(currentWeather.main.temp),
-        icon: currentWeather.weather[0]?.icon || "01d",
-        description: currentWeather.weather[0]?.description || "",
-      });
-    } else {
-      // 미래 시간은 예보 데이터 사용
-      if (todayItems.length === 0) continue;
-
-      // 해당 시간에 가장 가까운 항목 찾기
-      const closest = todayItems.reduce((prev, curr) => {
-        const currTime = new Date(curr.dt * 1000);
-        const prevDiff = Math.abs(prev.dt * 1000 - targetTime.getTime());
-        const currDiff = Math.abs(currTime.getTime() - targetTime.getTime());
-        return currDiff < prevDiff ? curr : prev;
-      }, todayItems[0]);
-
-      if (closest) {
+    if (closest) {
+      const itemTime = new Date(closest.dt * 1000);
+      const diff = Math.abs(itemTime.getTime() - targetTime.getTime());
+      if (diff <= 30 * 60 * 1000) {
         result.push({
           time: targetTime.toLocaleTimeString("ko-KR", {
             hour: "2-digit",
@@ -207,47 +190,15 @@ function formatHourlyForecast(
 }
 
 export async function getWeatherData(
-  coordinates: Coordinates,
-  locationName?: string
+  coordinates: Coordinates
 ): Promise<WeatherData> {
   const [currentWeather, forecast] = await Promise.all([
     getCurrentWeatherByCoords(coordinates.lat, coordinates.lon),
     getForecastByCoords(coordinates.lat, coordinates.lon),
   ]);
 
-  // locationName이 제공되지 않으면 reverse geocoding으로 한국 지역명 찾기
-  let displayLocationName = locationName || currentWeather.name;
-
-  if (!locationName && API_KEY) {
-    try {
-      const reverseGeoUrl = `https://api.openweathermap.org/geo/1.0/reverse?lat=${coordinates.lat}&lon=${coordinates.lon}&limit=1&appid=${API_KEY}`;
-      const reverseGeoResponse = await fetch(reverseGeoUrl);
-
-      if (reverseGeoResponse.ok) {
-        const reverseGeoData = (await reverseGeoResponse.json()) as Array<{
-          name: string;
-          local_names?: Record<string, string>;
-        }>;
-
-        if (reverseGeoData && reverseGeoData.length > 0) {
-          // 한국어 이름이 있으면 사용, 없으면 영문 이름 사용
-          const koreanName = reverseGeoData[0].local_names?.ko;
-          if (koreanName) {
-            displayLocationName = koreanName;
-          } else {
-            // local_names에 ko가 없으면 name 사용 (이미 영문일 수 있음)
-            displayLocationName = reverseGeoData[0].name;
-          }
-        }
-      }
-    } catch (error) {
-      // reverse geocoding 실패 시 원래 이름 사용
-      console.warn("Reverse geocoding failed, using API name:", error);
-    }
-  }
-
   const weatherData = {
-    location: displayLocationName,
+    location: currentWeather.name,
     coordinates: {
       lat: currentWeather.coord.lat,
       lon: currentWeather.coord.lon,
@@ -262,7 +213,7 @@ export async function getWeatherData(
       icon: currentWeather.weather[0]?.icon || "01d",
       windSpeed: currentWeather.wind.speed,
     },
-    hourlyForecast: formatHourlyForecast(forecast, currentWeather),
+    hourlyForecast: formatHourlyForecast(forecast),
   };
 
   // 최종 데이터 검증

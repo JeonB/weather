@@ -16,7 +16,6 @@ interface UseGeolocationReturn extends GeolocationState {
 
 export function useGeolocation(autoRequest = true): UseGeolocationReturn {
   const hasAutoRequestedRef = useRef(false);
-  const isRequestingRef = useRef(false);
   const [state, setState] = useState<GeolocationState>({
     coordinates: null,
     isLoading: false,
@@ -25,32 +24,22 @@ export function useGeolocation(autoRequest = true): UseGeolocationReturn {
   });
 
   useEffect(() => {
-    if (typeof navigator !== "undefined" && "geolocation" in navigator) {
-      setState((prev) => ({ ...prev, isSupported: true }));
-      return;
-    }
-
+    const isSupported =
+      typeof navigator !== "undefined" && "geolocation" in navigator;
     setState((prev) => ({
       ...prev,
-      isSupported: false,
-      error: "이 브라우저는 위치 정보를 지원하지 않습니다.",
+      isSupported,
+      error: isSupported
+        ? null
+        : "이 브라우저는 위치 정보를 지원하지 않습니다.",
     }));
   }, []);
 
   function requestLocation() {
-    if (state.isLoading || isRequestingRef.current) {
+    if (state.isLoading || !state.isSupported) {
       return;
     }
 
-    if (!state.isSupported) {
-      setState((prev) => ({
-        ...prev,
-        error: "이 브라우저는 위치 정보를 지원하지 않습니다.",
-      }));
-      return;
-    }
-
-    isRequestingRef.current = true;
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     navigator.geolocation.getCurrentPosition(
@@ -68,7 +57,6 @@ export function useGeolocation(autoRequest = true): UseGeolocationReturn {
           error: null,
           isSupported: true,
         });
-        isRequestingRef.current = false;
       },
       (error) => {
         let errorMessage = "위치 정보를 가져올 수 없습니다.";
@@ -91,7 +79,6 @@ export function useGeolocation(autoRequest = true): UseGeolocationReturn {
           isLoading: false,
           error: errorMessage,
         }));
-        isRequestingRef.current = false;
       },
       {
         enableHighAccuracy: false,

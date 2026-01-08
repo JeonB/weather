@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   getFavorites,
   addFavorite,
@@ -28,148 +28,106 @@ interface UseFavoritesReturn {
   refresh: () => void;
 }
 
-interface FavoritesSnapshot {
-  favorites: FavoriteLocation[];
-  canAddMore: boolean;
-}
-
-const listeners = new Set<() => void>();
-const defaultSnapshot: FavoritesSnapshot = { favorites: [], canAddMore: true };
-let cachedSnapshot: FavoritesSnapshot = defaultSnapshot;
-
-function safeGetFavorites(): FavoriteLocation[] {
+function getInitialFavorites(): FavoriteLocation[] {
   if (typeof window === "undefined") return [];
   return getFavorites();
 }
 
-function computeSnapshot(): FavoritesSnapshot {
-  return {
-    favorites: safeGetFavorites(),
-    canAddMore: typeof window === "undefined" ? true : canAddMoreFavorites(),
-  };
-}
-
-function areSnapshotsEqual(
-  a: FavoritesSnapshot,
-  b: FavoritesSnapshot
-): boolean {
-  if (a.canAddMore !== b.canAddMore) return false;
-  if (a.favorites.length !== b.favorites.length) return false;
-  for (let i = 0; i < a.favorites.length; i += 1) {
-    const prev = a.favorites[i];
-    const next = b.favorites[i];
-    if (
-      prev.id !== next.id ||
-      prev.fullName !== next.fullName ||
-      prev.displayName !== next.displayName ||
-      prev.alias !== next.alias ||
-      prev.coordinates?.lat !== next.coordinates?.lat ||
-      prev.coordinates?.lon !== next.coordinates?.lon
-    ) {
-      return false;
-    }
-  }
-  return true;
-}
-
-function updateCachedSnapshot(): FavoritesSnapshot {
-  const nextSnapshot = computeSnapshot();
-  if (!areSnapshotsEqual(cachedSnapshot, nextSnapshot)) {
-    cachedSnapshot = nextSnapshot;
-  }
-  return cachedSnapshot;
-}
-
-function getSnapshot(): FavoritesSnapshot {
-  if (typeof window === "undefined") {
-    return cachedSnapshot;
-  }
-  return updateCachedSnapshot();
-}
-
-function getServerSnapshot(): FavoritesSnapshot {
-  return defaultSnapshot;
-}
-
-function subscribe(listener: () => void) {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-}
-
-function emit() {
-  updateCachedSnapshot();
-  listeners.forEach((listener) => listener());
-}
-
 export function useFavorites(): UseFavoritesReturn {
-  const isHydrated = useSyncExternalStore(
-    () => () => {},
-    () => typeof window !== "undefined",
-    () => false
+  const [favorites, setFavorites] =
+    useState<FavoriteLocation[]>(getInitialFavorites);
+  const [canAddMore, setCanAddMore] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return canAddMoreFavorites();
+  });
+
+  const loadFavorites = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const loaded = getFavorites();
+    setFavorites(loaded);
+    setCanAddMore(canAddMoreFavorites());
+  }, []);
+
+  useEffect(() => {
+    // localStorage 변경 감지 (다른 탭에서 변경된 경우)
+    function handleStorageChange(e: StorageEvent) {
+      if (e.key === "weather-app-favorites") {
+        loadFavorites();
+      }
+    }
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, [loadFavorites]);
+
+  const refresh = useCallback(() => {
+    loadFavorites();
+  }, [loadFavorites]);
+
+  const addToFavorites = useCallback(
+    (
+      fullName: string,
+      displayName: string,
+      coordinates: Coordinates | null = null
+    ): boolean => {
+      const result = addFavorite(fullName, displayName, coordinates);
+      if (result) {
+        loadFavorites();
+        return true;
+      }
+      return false;
+    },
+    [loadFavorites]
   );
 
-  const snapshot = useSyncExternalStore(
-    subscribe,
-    () => (isHydrated ? getSnapshot() : defaultSnapshot),
-    getServerSnapshot
+  const removeFromFavorites = useCallback(
+    (id: string): boolean => {
+      const result = removeFavorite(id);
+      if (result) {
+        loadFavorites();
+        return true;
+      }
+      return false;
+    },
+    [loadFavorites]
   );
 
-  function refresh() {
-    emit();
-  }
+  const updateAlias = useCallback(
+    (id: string, alias: string | null): boolean => {
+      const result = updateFavoriteAlias(id, alias);
+      if (result) {
+        loadFavorites();
+        return true;
+      }
+      return false;
+    },
+    [loadFavorites]
+  );
 
-  function addToFavorites(
-    fullName: string,
-    displayName: string,
-    coordinates: Coordinates | null = null
-  ): boolean {
-    const result = addFavorite(fullName, displayName, coordinates);
-    if (result) {
-      emit();
-      return true;
-    }
-    return false;
-  }
-
-  function removeFromFavorites(id: string): boolean {
-    const result = removeFavorite(id);
-    if (result) {
-      emit();
-      return true;
-    }
-    return false;
-  }
-
-  function updateAlias(id: string, alias: string | null): boolean {
-    const result = updateFavoriteAlias(id, alias);
-    if (result) {
-      emit();
-      return true;
-    }
-    return false;
-  }
-
-  function updateCoordinates(id: string, coordinates: Coordinates): boolean {
-    const result = updateFavoriteCoordinates(id, coordinates);
-    if (result) {
-      emit();
-      return true;
-    }
-    return false;
-  }
+  const updateCoordinates = useCallback(
+    (id: string, coordinates: Coordinates): boolean => {
+      const result = updateFavoriteCoordinates(id, coordinates);
+      if (result) {
+        loadFavorites();
+        return true;
+      }
+      return false;
+    },
+    [loadFavorites]
+  );
 
   function isFavoriteLocation(fullName: string): boolean {
     return isFavorite(fullName);
   }
 
   return {
-    favorites: snapshot.favorites,
+    favorites,
     addToFavorites,
     removeFromFavorites,
     updateAlias,
     updateCoordinates,
     isFavoriteLocation,
-    canAddMore: snapshot.canAddMore,
+    canAddMore,
     refresh,
   };
 }

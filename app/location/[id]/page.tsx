@@ -25,8 +25,8 @@ export default function LocationPage({ params }: LocationPageProps) {
   const parsedLocation = parseLocationName(locationFullName);
   const searchQuery = getLocationForWeatherSearch(parsedLocation);
 
-  const { favorites } = useFavorites();
-  const isFavorite = favorites.some((f) => f.fullName === locationFullName);
+  const { isFavoriteLocation } = useFavorites();
+  const isFavorite = isFavoriteLocation(locationFullName);
 
   const {
     data: coordinates,
@@ -113,9 +113,22 @@ export default function LocationPage({ params }: LocationPageProps) {
         {/* 에러 상태 */}
         {error && !isLoading && (
           <div className="text-center py-12">
-            <p className="text-muted-foreground text-lg mb-4">
-              해당 장소의 정보가 제공되지 않습니다.
-            </p>
+            <div className="rounded-full bg-destructive/10 p-4 inline-block mb-4">
+              <svg
+                className="h-8 w-8 text-destructive"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+            </div>
+            <p className="text-destructive font-medium text-lg">{error}</p>
             <Link href="/">
               <Button variant="outline" className="mt-4">
                 다른 장소 검색하기

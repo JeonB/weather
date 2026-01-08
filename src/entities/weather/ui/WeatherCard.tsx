@@ -1,6 +1,7 @@
 "use client";
 
-import { WeatherScene } from "@shared/ui";
+import Image from "next/image";
+import { getWeatherIconUrl } from "@shared/api/weather";
 import { cn } from "@shared/lib/cn";
 
 interface WeatherCardProps {
@@ -31,7 +32,13 @@ export default function WeatherCard({
   if (compact) {
     return (
       <div className={cn("flex items-center gap-3", className)}>
-        <WeatherScene icon={icon} size="sm" className="shrink-0" />
+        <Image
+          src={getWeatherIconUrl(icon)}
+          alt={description}
+          width={48}
+          height={48}
+          className="shrink-0"
+        />
         <div className="flex flex-col">
           <span className="text-2xl font-bold">{temp}°</span>
           <span className="text-sm text-muted-foreground">
@@ -49,7 +56,13 @@ export default function WeatherCard({
       )}
 
       <div className="flex items-center gap-4">
-        <WeatherScene icon={icon} size="lg" className="shrink-0" />
+        <Image
+          src={getWeatherIconUrl(icon)}
+          alt={description}
+          width={100}
+          height={100}
+          className="shrink-0"
+        />
         <div className="flex flex-col items-center">
           <span className="text-6xl font-bold tracking-tight">{temp}°</span>
           <span className="text-lg capitalize text-muted-foreground">
