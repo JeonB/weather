@@ -1,5 +1,6 @@
 "use client";
 
+import { useLayoutEffect, useState, startTransition } from "react";
 import { motion } from "motion/react";
 import { FavoriteCard, useFavorites } from "@features/favorites";
 import { cn } from "@shared/lib/cn";
@@ -11,6 +12,14 @@ interface FavoritesListProps {
 
 export default function FavoritesList({ className }: FavoritesListProps) {
   const { favorites, removeFromFavorites, updateAlias } = useFavorites();
+  const [isMounted, setIsMounted] = useState(false);
+
+  // 하이드레이션 안전성을 위해 mounted 상태 확인
+  useLayoutEffect(() => {
+    startTransition(() => {
+      setIsMounted(true);
+    });
+  }, []);
 
   return (
     <div
@@ -27,11 +36,13 @@ export default function FavoritesList({ className }: FavoritesListProps) {
           </p>
         </div>
         <span className="text-sm text-muted-foreground font-medium">
-          {favorites.length}/{MAX_FAVORITES}
+          {isMounted
+            ? `${favorites.length}/${MAX_FAVORITES}`
+            : `-/ ${MAX_FAVORITES}`}
         </span>
       </div>
 
-      {favorites.length === 0 ? (
+      {!isMounted ? null : favorites.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg bg-muted/40">
           <div className="rounded-full bg-muted p-4 mb-4">
             <svg

@@ -7,7 +7,6 @@ import {
   removeFavorite,
   updateFavoriteAlias,
   updateFavoriteCoordinates,
-  isFavorite,
   canAddMoreFavorites,
   type FavoriteLocation,
 } from "@shared/lib/storage";
@@ -116,9 +115,12 @@ export function useFavorites(): UseFavoritesReturn {
     [loadFavorites]
   );
 
-  function isFavoriteLocation(fullName: string): boolean {
-    return isFavorite(fullName);
-  }
+  const isFavoriteLocation = useCallback(
+    (fullName: string): boolean => {
+      return favorites.some((f) => f.fullName === fullName);
+    },
+    [favorites]
+  );
 
   return {
     favorites,

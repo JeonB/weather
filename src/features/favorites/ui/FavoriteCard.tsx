@@ -70,11 +70,9 @@ export default function FavoriteCard({
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.3 }}
         whileHover={{ scale: 1.02 }}
-        className="h-full"
+        className="h-full group"
       >
-        <Card
-          className={cn("overflow-hidden group relative h-full", className)}
-        >
+        <Card className={cn("overflow-hidden relative h-full", className)}>
           <Link
             href={`/location/${locationId}`}
             className="block cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg"
@@ -133,11 +131,7 @@ export default function FavoriteCard({
           </Link>
 
           {/* 액션 버튼들 */}
-          <motion.div
-            className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
-            initial={{ opacity: 0 }}
-            whileHover={{ opacity: 1 }}
-          >
+          <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
             <Button
               variant="ghost"
               size="icon"
@@ -184,7 +178,7 @@ export default function FavoriteCard({
                 />
               </svg>
             </Button>
-          </motion.div>
+          </div>
         </Card>
       </motion.div>
 
