@@ -71,10 +71,15 @@ export default function FavoriteCard({
         whileHover={{ scale: 1.02 }}
         className="h-full group"
       >
-        <Card className={cn("overflow-hidden relative h-full", className)}>
+        <Card
+          className={cn(
+            "overflow-hidden relative h-full flex flex-col",
+            className
+          )}
+        >
           <Link
             href={`/location/${locationId}`}
-            className="block cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg"
+            className="block cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg flex-1"
           >
             <CardContent className="p-4">
               <div className="flex items-start justify-center mb-3">
@@ -122,35 +127,63 @@ export default function FavoriteCard({
             </CardContent>
           </Link>
 
-          {/* 액션 버튼들 */}
-          <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={(e) => {
-                e.preventDefault();
-                setIsEditOpen(true);
-              }}
-            >
-              <svg
-                className="h-3.5 w-3.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+          {/* 우측 상단 버튼들 */}
+          <div className="absolute top-2 right-2 flex gap-1 z-10">
+            {/* 데스크톱: 수정/삭제 모두 호버 시 표시 */}
+            <div className="hidden lg:flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setIsEditOpen(true);
+                }}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                />
-              </svg>
-            </Button>
+                <svg
+                  className="h-3.5 w-3.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                  />
+                </svg>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-destructive hover:text-destructive"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onRemove(favorite.id);
+                }}
+              >
+                <svg
+                  className="h-3.5 w-3.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </Button>
+            </div>
+
+            {/* 모바일: 삭제 버튼만 항상 표시 */}
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 text-destructive hover:text-destructive"
+              className="lg:hidden h-7 w-7 text-destructive hover:text-destructive"
               onClick={(e) => {
                 e.preventDefault();
                 onRemove(favorite.id);
@@ -169,6 +202,33 @@ export default function FavoriteCard({
                   d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
+            </Button>
+          </div>
+
+          {/* 모바일: 하단 수정 버튼 */}
+          <div className="lg:hidden border-t border-border/50">
+            <Button
+              variant="ghost"
+              className="w-full h-10 rounded-none text-sm font-medium"
+              onClick={(e) => {
+                e.preventDefault();
+                setIsEditOpen(true);
+              }}
+            >
+              <svg
+                className="h-4 w-4 mr-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                />
+              </svg>
+              장소 별칭 수정
             </Button>
           </div>
         </Card>
