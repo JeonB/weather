@@ -105,6 +105,14 @@ pnpm dev
   - 즉각적인 데이터 저장/조회
   - 브라우저 간 독립적 동작
 
+### 5. Nominatim API 선택 (역지오코딩)
+
+- **선택 이유**: 브라우저 Geolocation API로 얻은 좌표를 지역명으로 변환하기 위해 선택. Open-Meteo는 역지오코딩을 제공하지 않음음
+- **장점**:
+  - 완전 무료, API 키 불필요
+  - OpenStreetMap 기반으로 정확한 지역 정보 제공
+  - 한국어 주소 정보 지원 (accept-language=ko)
+
 ## 프로젝트 구조 (FSD)
 
 ```bash

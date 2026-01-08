@@ -19,11 +19,10 @@ export default function HomePage() {
     error: geoError,
   } = useGeolocation();
 
-  // 좌표에서 한글 위치명 가져오기
+  // 좌표에서 지역명 가져오기 (Nominatim API 사용)
   const { data: locationName } = useReverseGeocoding(geoCoordinates, {
     enabled: !!geoCoordinates && !geoLoading,
   });
-
   function handleSelectLocation(location: ParsedLocation) {
     const encodedLocation = encodeURIComponent(location.fullName);
     router.push(`/location/${encodedLocation}`);
@@ -87,7 +86,7 @@ export default function HomePage() {
             >
               <WeatherDisplay
                 coordinates={geoCoordinates}
-                locationName={locationName || undefined}
+                locationName={locationName || "현재 위치"}
                 showFavoriteButton={false}
               />
             </motion.section>

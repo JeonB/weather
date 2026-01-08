@@ -158,16 +158,10 @@ export async function getWeatherData(
 
   // 2. 현재 날씨 정보
   const currentIndex = data.hourly.time.findIndex((t) => new Date(t) >= now);
-  
-  // currentIndex가 유효한지 확인 (findIndex가 -1을 반환할 수 있음)
-  if (currentIndex < 0) {
-    throw new Error("현재 시각에 해당하는 날씨 데이터를 찾을 수 없습니다.");
-  }
-  
-  const currentTemp = data.hourly.temperature_2m[currentIndex] ?? 0;
-  const currentWeatherCode = data.hourly.weathercode[currentIndex] ?? 0;
-  const currentHumidity = data.hourly.relativehumidity_2m[currentIndex] ?? 0;
-  const currentWindSpeed = data.hourly.windspeed_10m[currentIndex] ?? 0;
+  const currentTemp = data.hourly.temperature_2m[currentIndex] || 0;
+  const currentWeatherCode = data.hourly.weathercode[currentIndex] || 0;
+  const currentHumidity = data.hourly.relativehumidity_2m[currentIndex] || 0;
+  const currentWindSpeed = data.hourly.windspeed_10m[currentIndex] || 0;
 
   // 야간 여부 판단
   const currentHour = now.getHours();
